@@ -1,0 +1,31 @@
+@model lw_Confirmation_of_received_telegram.Models.M_View_DbStatus
+@{
+    ViewData["Title"] = "受信確認";
+}
+
+<h1>受信電文確認（沖縄中央病院）</h1>
+
+@if (Model.IsConnected)
+{
+    <div class="alert alert-success">DB接続：正常</div>
+    <table class="table table-bordered w-auto">
+        <tbody>
+            <tr>
+                <th>受信電文の総件数</th>
+                <td class="text-end">@Model.TotalCount 件</td>
+            </tr>
+            <tr>
+                <th>本日の受信件数</th>
+                <td class="text-end">@Model.TodayCount 件</td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-danger">
+        <strong>DB接続：失敗</strong>
+        <p class="mb-0">@Model.ErrorMessage</p>
+        <p class="mb-0">appsettings.Development.json の接続文字列と、開発サーバーの稼働状態を確認してください。</p>
+    </div>
+}

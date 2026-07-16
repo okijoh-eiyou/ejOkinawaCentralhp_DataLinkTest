@@ -427,3 +427,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ASP.NET Core - 接続情報はコミットしない
+appsettings.Development.json
