@@ -28,8 +28,8 @@ namespace lw_Confirmation_of_received_telegram.Models
         /// <summary>患者番号</summary>
         public string patient_number { get; set; } = "";
 
-        /// <summary>開始日</summary>
-        public DateTime? start_date { get; set; }
+        /// <summary>開始日（DB列はDATE型。NpgsqlがDateOnlyで返すため型を合わせる）</summary>
+        public DateOnly? start_date { get; set; }
 
         /// <summary>開始食事区分 (1:朝, 2:昼, 3:夕)</summary>
         public string start_meal_type { get; set; } = "";

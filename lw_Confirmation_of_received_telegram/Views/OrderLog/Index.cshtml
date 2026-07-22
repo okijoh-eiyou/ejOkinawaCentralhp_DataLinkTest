@@ -1,0 +1,50 @@
+@model lw_Confirmation_of_received_telegram.Models.M_View_OrderSearch
+@{
+    ViewData["Title"] = "患者検索";
+}
+
+<h1>患者検索</h1>
+
+<form method="get" asp-controller="OrderLog" asp-action="Index" class="row g-2 align-items-center mb-4">
+    <div class="col-auto">
+        <label class="col-form-label" for="patientNumber">患者番号</label>
+    </div>
+    <div class="col-auto">
+        <input type="text" id="patientNumber" name="patientNumber" class="form-control" value="@Model.PatientNumber" />
+    </div>
+    <div class="col-auto">
+        <div class="form-check">
+            <input type="checkbox" id="showInactive" name="showInactive" value="true" class="form-check-input"
+                   checked="@(Model.ShowInactive ? "checked" : null)" />
+            <label class="form-check-label" for="showInactive">無効データも表示する</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">検索</button>
+    </div>
+</form>
+
+@if (!Model.Searched)
+{
+    <p class="text-muted">患者番号を入力して検索してください。</p>
+}
+else if (!Model.IsConnected)
+{
+    <div class="alert alert-danger">
+        <strong>DB接続：失敗</strong>
+        <p class="mb-0">@Model.ErrorMessage</p>
+    </div>
+}
+else if (Model.OrderLogs.Count == 0)
+{
+    <p>データがありません。</p>
+    @if (!Model.ShowInactive)
+    {
+        <p class="text-muted">「無効データも表示する」にチェックを入れると見つかる場合があります。</p>
+    }
+}
+else
+{
+    <p>患者番号 <strong>@Model.PatientNumber</strong> の電文: @Model.OrderLogs.Count 件</p>
+    <partial name="_OrderLogTable" model="Model.OrderLogs" />
+}

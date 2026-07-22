@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# 開発用DBのデータダンプ（患者氏名入りのテストデータのためコミットしない）
+db_csv/
+
 # User-specific files
 *.rsuser
 *.suo

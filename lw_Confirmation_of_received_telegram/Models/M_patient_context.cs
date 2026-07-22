@@ -25,8 +25,8 @@ namespace lw_Confirmation_of_received_telegram.Models
         /// <summary>患者性別内容</summary>
         public string gender_text { get; set; } = "";
 
-        /// <summary>患者生年月日</summary>
-        public DateTime? birth_date { get; set; }
+        /// <summary>患者生年月日（DB列はDATE型。NpgsqlがDateOnlyで返すため型を合わせる）</summary>
+        public DateOnly? birth_date { get; set; }
 
         /// <summary>患者身長(cm)</summary>
         public float? height_cm { get; set; }
