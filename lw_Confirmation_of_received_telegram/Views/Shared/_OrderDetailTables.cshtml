@@ -1,0 +1,287 @@
+@* 選択した電文の展開データ表示（屋宜原版の下段6グリッドに相当）。
+   患者検索の下部と電文詳細ページで共用。2列レイアウトで生JSON＋展開8テーブルを並べる *@
+@using lw_Confirmation_of_received_telegram.Models
+@model M_View_OrderDetail
+
+@if (!Model.IsConnected)
+{
+    <div class="alert alert-danger">
+        <strong>DB接続：失敗</strong>
+        <p class="mb-0">@Model.ErrorMessage</p>
+    </div>
+}
+else if (Model.OrderLog == null)
+{
+    <div class="alert alert-warning">指定された電文が見つかりません。</div>
+}
+else
+{
+    var log = Model.OrderLog;
+
+    @if (log.update_type != "A"
+        && Model.PatientContexts.Count == 0 && Model.Meals.Count == 0 && Model.Comments.Count == 0
+        && Model.ContraComments.Count == 0 && Model.OtherComments.Count == 0 && Model.Diseases.Count == 0
+        && Model.TubeFeedings.Count == 0 && Model.FreeComments.Count == 0)
+    {
+        <div class="alert alert-info mt-3 mb-0">
+            展開データがありません。削除電文（更新区分 D / I）では展開されないのが正常です。
+        </div>
+    }
+
+    <div class="row g-3 mt-0">
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">生データ（受信電文JSON）</h2>
+            <pre class="bg-light border rounded p-2 order-log-scroll mb-0" style="white-space: pre-wrap; word-break: break-all;">@Model.FormattedJson()</pre>
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">患者状況（lw_patient_context）: @Model.PatientContexts.Count 件</h2>
+            @if (Model.PatientContexts.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>患者番号</th><th>カナ氏名</th><th>漢字氏名</th><th>性別</th><th>生年月日</th>
+                                <th>身長(cm)</th><th>体重(kg)</th><th>病棟</th><th>病室</th><th>ベッド</th>
+                                <th>科コード</th><th>主治医</th><th>食事加算</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.PatientContexts)
+                            {
+                                <tr>
+                                    <td>@p.patient_number</td>
+                                    <td>@p.kana_name</td>
+                                    <td>@p.kanji_name</td>
+                                    <td>@(string.IsNullOrEmpty(p.gender_text) ? p.gender : p.gender_text)</td>
+                                    <td>@p.birth_date?.ToString("yyyy-MM-dd")</td>
+                                    <td>@p.height_cm</td>
+                                    <td>@p.weight_kg</td>
+                                    <td>@p.ward_code @Model.WardName(p.ward_code)</td>
+                                    <td>@p.room_code @Model.RoomName(p.room_code)</td>
+                                    <td>@p.bed_code</td>
+                                    <td>@p.clinical_department_code</td>
+                                    <td>@p.doctor_code @p.doctor_name</td>
+                                    <td>@p.addition_type</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">食事内容（lw_meal）: @Model.Meals.Count 件</h2>
+            @if (Model.Meals.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>時間区分</th><th>食種</th><th>食事形態コード</th><th>配膳区分コード</th>
+                                <th>主食</th><th>主食量</th><th>特食加算</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in Model.Meals)
+                            {
+                                <tr>
+                                    <td>@M_View_OrderDetail.MealTimeText(m.meal_time_code)</td>
+                                    <td>@m.meal_code @Model.MealName(m.meal_code)</td>
+                                    <td>@m.meal_form_code</td>
+                                    <td>@m.serving_category_code</td>
+                                    <td>@m.main_dish_code @Model.MainDishName(m.main_dish_code)</td>
+                                    <td>@m.main_dish_amout</td>
+                                    <td>@m.addition_type</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">経管栄養（lw_tube_feeding）: @Model.TubeFeedings.Count 件</h2>
+            @if (Model.TubeFeedings.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>時間区分</th><th>並び順</th><th>製品コード</th><th>製品名</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model.TubeFeedings)
+                            {
+                                <tr>
+                                    <td>@M_View_OrderDetail.MealTimeText(t.meal_time_code)</td>
+                                    <td>@t.row_order</td>
+                                    <td>@t.product_code</td>
+                                    <td>@Model.TubeProductName(t.product_code)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">コメント（lw_comment）: @Model.Comments.Count 件</h2>
+            @if (Model.Comments.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Comments)
+                            {
+                                <tr>
+                                    <td>@M_View_OrderDetail.MealTimeText(c.meal_time_code)</td>
+                                    <td>@c.row_order</td>
+                                    <td>@c.comment_code</td>
+                                    <td>@Model.CommentName(c.comment_code)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">禁止コメント（lw_contra_comment）: @Model.ContraComments.Count 件</h2>
+            @if (Model.ContraComments.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.ContraComments)
+                            {
+                                <tr>
+                                    <td>@M_View_OrderDetail.MealTimeText(c.meal_time_code)</td>
+                                    <td>@c.row_order</td>
+                                    <td>@c.contra_code</td>
+                                    <td>@Model.ContraName(c.contra_code)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">その他コメント（lw_other_comment）: @Model.OtherComments.Count 件</h2>
+            @if (Model.OtherComments.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.OtherComments)
+                            {
+                                <tr>
+                                    <td>@M_View_OrderDetail.MealTimeText(c.meal_time_code)</td>
+                                    <td>@c.row_order</td>
+                                    <td>@c.other_comment_code</td>
+                                    <td>@Model.OtherCommentName(c.other_comment_code)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">病名（lw_disease）: @Model.Diseases.Count 件</h2>
+            @if (Model.Diseases.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>順序</th><th>加算/非加算</th><th>病名コード</th><th>漢字病名</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model.Diseases)
+                            {
+                                <tr>
+                                    <td>@d.row_order</td>
+                                    <td>@d.addition_type</td>
+                                    <td>@d.disease_code</td>
+                                    <td>@d.disease_name</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h6 mb-1">フリーコメント（lw_free_comment）: @Model.FreeComments.Count 件</h2>
+            @if (Model.FreeComments.Count == 0)
+            {
+                <p class="text-muted mb-0">0件</p>
+            }
+            else
+            {
+                <div class="table-responsive border">
+                    <table class="table table-bordered table-striped table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>朝</th><th>昼</th><th>夕</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var f in Model.FreeComments)
+                            {
+                                <tr>
+                                    <td>@f.free_comment_01</td>
+                                    <td>@f.free_comment_02</td>
+                                    <td>@f.free_comment_03</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}

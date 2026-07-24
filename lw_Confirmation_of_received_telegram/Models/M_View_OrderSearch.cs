@@ -22,5 +22,11 @@ namespace lw_Confirmation_of_received_telegram.Models
 
         /// <summary>検索結果の電文一覧（新しい順）</summary>
         public List<M_order_log> OrderLogs { get; set; } = new();
+
+        /// <summary>一覧で選択中の電文ID（未選択なら null）</summary>
+        public int? SelectedId { get; set; }
+
+        /// <summary>選択中の電文の展開データ（画面下部に表示。未選択なら null）</summary>
+        public M_View_OrderDetail? Detail { get; set; }
     }
 }

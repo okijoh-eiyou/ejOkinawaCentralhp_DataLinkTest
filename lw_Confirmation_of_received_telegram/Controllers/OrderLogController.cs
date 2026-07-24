@@ -20,10 +20,11 @@ public class OrderLogController : Controller
     }
 
     /// <summary>
-    /// 画面2: 患者検索（/OrderLog?patientNumber=）。患者番号未指定なら検索フォームのみ表示。
-    /// 既定では無効データ（is_active = FALSE）を隠し、showInactive = true で全件表示
+    /// 患者検索（/OrderLog?patientNumber=）。患者番号未指定なら検索フォームのみ表示。
+    /// 既定では無効データ（is_active = FALSE）を隠し、showInactive = true で全件表示。
+    /// selectedId 指定時は、その電文の展開データを同じ画面の下部に表示する（屋宜原版の行選択に相当）
     /// </summary>
-    public IActionResult Index(string? patientNumber, bool showInactive = false)
+    public IActionResult Index(string? patientNumber, bool showInactive = false, int? selectedId = null)
     {
         var search = new M_View_OrderSearch
         {
@@ -52,13 +53,27 @@ public class OrderLogController : Controller
             _logger.LogError(ex, "患者検索でDBエラー（患者番号: {PatientNumber}）", search.PatientNumber);
         }
 
+        if (selectedId.HasValue && search.IsConnected)
+        {
+            search.SelectedId = selectedId;
+            search.Detail = BuildDetail(selectedId.Value);
+        }
+
         return View(search);
     }
 
     /// <summary>
-    /// 画面3: 電文詳細（/OrderLog/Detail/{id}）。生JSONと展開8テーブルを表示
+    /// 電文詳細（/OrderLog/Detail/{id}）。生JSONと展開8テーブルを単独ページで表示
     /// </summary>
     public IActionResult Detail(int id)
+    {
+        return View(BuildDetail(id));
+    }
+
+    /// <summary>
+    /// 電文1件の展開データ一式を組み立てる（患者検索の下部表示と詳細ページで共用）
+    /// </summary>
+    private M_View_OrderDetail BuildDetail(int id)
     {
         var detail = new M_View_OrderDetail();
 
@@ -106,7 +121,7 @@ public class OrderLogController : Controller
             _logger.LogError(ex, "電文詳細でDBエラー（id: {Id}）", id);
         }
 
-        return View(detail);
+        return detail;
     }
 
     /// <summary>
