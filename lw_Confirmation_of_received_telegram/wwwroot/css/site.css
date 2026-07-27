@@ -33,3 +33,8 @@ body {
   background-color: #fff;
   box-shadow: inset 0 -1px 0 #dee2e6;
 }
+
+/* 列見出しの色分け: 赤(text-danger)=マスタ名前解決済みの列 / オレンジ=将来名前解決するがマスタ未作成の列 */
+.text-master-pending {
+  color: #fd7e14;
+}

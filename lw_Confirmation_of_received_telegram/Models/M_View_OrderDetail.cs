@@ -30,6 +30,8 @@ namespace lw_Confirmation_of_received_telegram.Models
         // マスタ名前解決用の辞書（コード→名前）。マスタが空・未投入なら空辞書のままで動く
         public Dictionary<string, string> WardNames { get; set; } = new();
         public Dictionary<string, string> RoomNames { get; set; } = new();
+        public Dictionary<string, string> BedNames { get; set; } = new();
+        public Dictionary<string, string> DepartmentNames { get; set; } = new();
         public Dictionary<string, string> MealNames { get; set; } = new();
         public Dictionary<string, string> MainDishNames { get; set; } = new();
         public Dictionary<string, string> CommentNames { get; set; } = new();
@@ -39,6 +41,8 @@ namespace lw_Confirmation_of_received_telegram.Models
 
         public string WardName(string? code) => Resolve(WardNames, code);
         public string RoomName(string? code) => Resolve(RoomNames, code);
+        public string BedName(string? code) => Resolve(BedNames, code);
+        public string DepartmentName(string? code) => Resolve(DepartmentNames, code);
         public string MealName(string? code) => Resolve(MealNames, code);
         public string MainDishName(string? code) => Resolve(MainDishNames, code);
         public string CommentName(string? code) => Resolve(CommentNames, code);

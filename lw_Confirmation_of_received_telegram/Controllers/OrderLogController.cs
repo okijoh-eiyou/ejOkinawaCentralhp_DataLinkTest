@@ -106,6 +106,8 @@ public class OrderLogController : Controller
                 // マスタ名前解決（列構成は ejOkinawaCentralhp リポジトリの database/tables を正とする）
                 detail.WardNames = LoadMaster("SELECT ward_code AS code, COALESCE(ward_name, '') AS name FROM lw_m_ward");
                 detail.RoomNames = LoadMaster("SELECT room_code AS code, COALESCE(room_name, '') AS name FROM lw_m_room");
+                detail.BedNames = LoadMaster("SELECT bed_code AS code, COALESCE(bed_name, '') AS name FROM lw_m_bed");
+                detail.DepartmentNames = LoadMaster("SELECT department_code AS code, COALESCE(department_name, '') AS name FROM lw_m_department");
                 detail.MealNames = LoadMaster("SELECT meal_code AS code, COALESCE(meal_name, '') AS name FROM lw_m_meal");
                 detail.MainDishNames = LoadMaster("SELECT main_dish_code AS code, COALESCE(main_dish_name, '') AS name FROM lw_m_main_dish");
                 detail.CommentNames = LoadMaster("SELECT comment_code AS code, COALESCE(comment_name, '') AS name FROM lw_m_comment");

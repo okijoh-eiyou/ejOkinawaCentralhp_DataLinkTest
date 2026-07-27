@@ -47,8 +47,8 @@ else
                         <thead>
                             <tr>
                                 <th>患者番号</th><th>カナ氏名</th><th>漢字氏名</th><th>性別</th><th>生年月日</th>
-                                <th>身長(cm)</th><th>体重(kg)</th><th>病棟</th><th>病室</th><th>ベッド</th>
-                                <th>科コード</th><th>主治医</th><th>食事加算</th>
+                                <th>身長(cm)</th><th>体重(kg)</th><th class="text-danger">病棟</th><th class="text-danger">病室</th><th class="text-danger">ベッド</th>
+                                <th class="text-danger">科</th><th>主治医</th><th>食事加算</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,8 +64,8 @@ else
                                     <td>@p.weight_kg</td>
                                     <td>@p.ward_code @Model.WardName(p.ward_code)</td>
                                     <td>@p.room_code @Model.RoomName(p.room_code)</td>
-                                    <td>@p.bed_code</td>
-                                    <td>@p.clinical_department_code</td>
+                                    <td>@p.bed_code @Model.BedName(p.bed_code)</td>
+                                    <td>@p.clinical_department_code @Model.DepartmentName(p.clinical_department_code)</td>
                                     <td>@p.doctor_code @p.doctor_name</td>
                                     <td>@p.addition_type</td>
                                 </tr>
@@ -88,8 +88,8 @@ else
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>時間区分</th><th>食種</th><th>食事形態コード</th><th>配膳区分コード</th>
-                                <th>主食</th><th>主食量</th><th>特食加算</th>
+                                <th>時間区分</th><th class="text-danger">食種</th><th class="text-master-pending">食事形態コード</th><th class="text-master-pending">配膳区分コード</th>
+                                <th class="text-danger">主食</th><th>主食量</th><th>特食加算</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -122,7 +122,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>製品コード</th><th>製品名</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th>製品コード</th><th class="text-master-pending">製品名</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var t in Model.TubeFeedings)
@@ -151,7 +151,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-master-pending">内容</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.Comments)
@@ -180,7 +180,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-danger">内容</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.ContraComments)
@@ -209,7 +209,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th>内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-danger">内容</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.OtherComments)
