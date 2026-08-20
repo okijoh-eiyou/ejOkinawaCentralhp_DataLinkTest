@@ -11,6 +11,7 @@
 - 屋宜原病院版（WPF: `C:\git-file_eiyou\smax_Confirmation_of_received_telegram`）の載せ替え版
 - 本番はUbuntu VM上のDockerで稼働予定。栄養課PCはブラウザでアクセスする
 - データを閲覧するのみ。業務テーブルへのINSERT/UPDATE/DELETEは実装しない
+  （※将来「マスタ保守」機能＝マスタ更新画面を作る場合は、このルールの改定を上司と合意してから着手すること。2026-07-31記録）
 
 ## 構成
 

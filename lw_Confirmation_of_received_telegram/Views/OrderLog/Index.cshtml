@@ -3,8 +3,26 @@
     ViewData["Title"] = "患者検索";
 }
 
+@* 最新の受信電文（全患者・無効含む）。患者番号を知らなくても受信状況が分かる欄。
+   下の検索結果と見分けるため緑ベース配色＋クリックで開閉（既定は開） *@
+<details open class="latest-log-panel mt-2">
+    <summary class="h6 mb-1">最新の受信電文（全患者・最新300件）［クリックで開閉］</summary>
+    @if (Model.LatestLogsError != "")
+    {
+        <div class="alert alert-danger py-1 mb-2">最新電文一覧を取得できませんでした: @Model.LatestLogsError</div>
+    }
+    else if (Model.LatestLogs.Count == 0)
+    {
+        <p class="text-muted small mb-2">受信電文はありません。</p>
+    }
+    else
+    {
+        <partial name="_LatestOrderLogTable" model="Model" />
+    }
+</details>
+
 @* 屋宜原版 MainWindow 上部と同じ構成: 患者番号 → 表示ボタン → 無効/削除データの表示。右端に検索件数 *@
-<form method="get" asp-controller="OrderLog" asp-action="Index" class="row g-2 align-items-center mb-3 mt-2">
+<form method="get" asp-controller="OrderLog" asp-action="Index" class="row g-2 align-items-center mb-3 mt-3">
     <div class="col-auto">
         <input type="text" id="patientNumber" name="patientNumber" class="form-control"
                placeholder="患者番号" value="@Model.PatientNumber" />
@@ -19,9 +37,12 @@
             <label class="form-check-label" for="showInactive">無効/削除データの表示</label>
         </div>
     </div>
+    <div class="col-auto ms-auto">
+        <a class="btn btn-outline-danger btn-sm fw-bold" asp-controller="MealPlan" asp-action="Index">食事一覧（開発中）</a>
+    </div>
     @if (Model.Searched && Model.IsConnected)
     {
-        <div class="col-auto ms-auto">
+        <div class="col-auto">
             <span>検索件数: <strong>@Model.OrderLogs.Count</strong> 件</span>
         </div>
     }

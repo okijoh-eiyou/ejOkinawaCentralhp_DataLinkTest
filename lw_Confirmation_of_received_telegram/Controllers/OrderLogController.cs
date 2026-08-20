@@ -32,6 +32,18 @@ public class OrderLogController : Controller
             ShowInactive = showInactive,
         };
 
+        // 検索とは独立に、最新の受信電文（全患者・無効含む）を画面上部に常時表示する
+        try
+        {
+            search.LatestLogs = _db.GetDataList_SQL<M_order_log>(
+                "SELECT * FROM lw_order_log ORDER BY id DESC LIMIT 300");
+        }
+        catch (Exception ex)
+        {
+            search.LatestLogsError = ex.Message;
+            _logger.LogError(ex, "最新電文一覧の取得でDBエラー");
+        }
+
         if (search.PatientNumber == "")
         {
             return View(search);

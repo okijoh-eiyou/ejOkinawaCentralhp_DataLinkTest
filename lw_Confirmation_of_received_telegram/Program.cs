@@ -4,6 +4,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<lw_Confirmation_of_received_telegram.Services.Connect_PostgreSQL>();
 
+// 食事一覧の供給元。現在は仮実装（目次ハードコード＋肉付けは実DB）。
+// 上司の meal_plan 相当テーブルができたら DbMealPlanProvider を作り、この1行を差し替える
+builder.Services.AddSingleton<lw_Confirmation_of_received_telegram.Services.IMealPlanProvider,
+    lw_Confirmation_of_received_telegram.Services.FakeMealPlanProvider>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

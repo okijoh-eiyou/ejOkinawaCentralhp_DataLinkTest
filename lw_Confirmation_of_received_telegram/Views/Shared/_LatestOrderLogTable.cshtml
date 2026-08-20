@@ -1,8 +1,8 @@
-@* 電文一覧テーブル（受信情報）。約5行分の高さで縦スクロール。
-   「詳細」で同じ画面の下部に展開データを表示（選択行は青、無効データは灰色） *@
+@* 最新の受信電文一覧（全患者・無効含む・最新300件）。検索バーの上に常時表示する。
+   「詳細」を押すと、その患者番号で検索した状態＋その電文の展開表示に切り替わる *@
 @model lw_Confirmation_of_received_telegram.Models.M_View_OrderSearch
 
-<div class="table-responsive order-log-scroll border">
+<div class="table-responsive order-log-scroll order-log-scroll-sm border">
     <table class="table table-bordered table-striped table-sm align-middle mb-0">
         <thead>
             <tr>
@@ -20,13 +20,14 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var log in Model.OrderLogs)
+            @foreach (var log in Model.LatestLogs)
             {
-                <tr class="@(log.id == Model.SelectedId ? "table-primary" : (log.is_active ? "" : "table-secondary"))">
+                @* この欄は純粋な2色ストライプ（無効のグレー塗りはしない。無効かは「有効」列で判別）。選択中のみ青 *@
+                <tr class="@(log.id == Model.SelectedId ? "table-primary" : "")">
                     <td>
                         <a class="btn btn-sm btn-outline-primary" asp-controller="OrderLog" asp-action="Index"
-                           asp-route-patientNumber="@Model.PatientNumber"
-                           asp-route-showInactive="@(Model.ShowInactive ? "true" : null)"
+                           asp-route-patientNumber="@log.patient_number"
+                           asp-route-showInactive="true"
                            asp-route-selectedId="@log.id">詳細</a>
                     </td>
                     <td>@log.id</td>

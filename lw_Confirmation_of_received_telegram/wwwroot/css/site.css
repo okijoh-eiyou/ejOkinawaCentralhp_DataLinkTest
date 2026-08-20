@@ -34,7 +34,37 @@ body {
   box-shadow: inset 0 -1px 0 #dee2e6;
 }
 
-/* 列見出しの色分け: 赤(text-danger)=マスタ名前解決済みの列 / オレンジ=将来名前解決するがマスタ未作成の列 */
-.text-master-pending {
+/* 最新受信電文（画面上部の常時表示欄）: ヘッダー＋4行分の高さ。order-log-scroll と併用して上書きする */
+.order-log-scroll-sm {
+  max-height: 205px;
+}
+
+/* 最新受信電文欄: 表のヘッダー行を濃い緑＋白文字にして「全体の受信モニタ」だと分かるようにする。
+   ラベル（summary）は緑文字・背景なし。行の縞/グレー/青のルールは検索結果と共通 */
+.latest-log-panel summary {
+  cursor: pointer;
+  color: #146c43;
+}
+
+/* .order-log-scroll thead th（白背景・固定ヘッダー）より後に書いて上書きする */
+.latest-log-panel thead th {
+  background-color: #146c43;
+  color: #fff;
+}
+
+/* 列見出しの色分け:
+   赤(col-code)          = コード列（電文由来の生の値）
+   オレンジ(col-master-name) = マスタで名前に変換した列
+   緑(col-master-missing)   = 名前列だがマスタ未実装で変換できていない列
+   黒(無指定)             = 電文そのものの値（マスタ無関係） */
+.col-code {
+  color: #dc3545;
+}
+
+.col-master-name {
   color: #fd7e14;
+}
+
+.col-master-missing {
+  color: #198754;
 }

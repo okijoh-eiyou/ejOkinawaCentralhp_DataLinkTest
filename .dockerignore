@@ -1,0 +1,10 @@
+# ビルドに不要なもの・イメージに入れてはいけないものを除外
+**/bin/
+**/obj/
+.git/
+.gitignore
+db_csv/
+*.md
+
+# 接続情報（本番は環境変数 ConnectionStrings__Default で渡す）
+**/appsettings.Development.json

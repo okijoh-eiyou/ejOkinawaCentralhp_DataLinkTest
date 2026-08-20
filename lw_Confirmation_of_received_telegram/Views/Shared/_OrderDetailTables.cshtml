@@ -29,12 +29,14 @@ else
     }
 
     <div class="row g-3 mt-0">
-        <div class="col-lg-6">
-            <h2 class="h6 mb-1">生データ（受信電文JSON）</h2>
-            <pre class="bg-light border rounded p-2 order-log-scroll mb-0" style="white-space: pre-wrap; word-break: break-all;">@Model.FormattedJson()</pre>
+        <div class="col-12">
+            <details>
+                <summary class="h6 mb-1 text-primary">生データ（受信電文JSON）［クリックで開閉］</summary>
+                <pre class="bg-light border rounded p-2 mb-0" style="white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto;">@Model.FormattedJson()</pre>
+            </details>
         </div>
 
-        <div class="col-lg-6">
+        <div class="col-12">
             <h2 class="h6 mb-1">患者状況（lw_patient_context）: @Model.PatientContexts.Count 件</h2>
             @if (Model.PatientContexts.Count == 0)
             {
@@ -47,8 +49,12 @@ else
                         <thead>
                             <tr>
                                 <th>患者番号</th><th>カナ氏名</th><th>漢字氏名</th><th>性別</th><th>生年月日</th>
-                                <th>身長(cm)</th><th>体重(kg)</th><th class="text-danger">病棟</th><th class="text-danger">病室</th><th class="text-danger">ベッド</th>
-                                <th class="text-danger">科</th><th>主治医</th><th>食事加算</th>
+                                <th>身長(cm)</th><th>体重(kg)</th>
+                                <th class="col-code">病棟コード</th><th class="col-master-name">病棟名</th>
+                                <th class="col-code">病室コード</th><th class="col-master-name">病室名</th>
+                                <th class="col-code">ベッドコード</th><th class="col-master-name">ベッド名</th>
+                                <th class="col-code">科コード</th><th class="col-master-name">科名</th>
+                                <th>主治医</th><th>食事加算</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -62,10 +68,14 @@ else
                                     <td>@p.birth_date?.ToString("yyyy-MM-dd")</td>
                                     <td>@p.height_cm</td>
                                     <td>@p.weight_kg</td>
-                                    <td>@p.ward_code @Model.WardName(p.ward_code)</td>
-                                    <td>@p.room_code @Model.RoomName(p.room_code)</td>
-                                    <td>@p.bed_code @Model.BedName(p.bed_code)</td>
-                                    <td>@p.clinical_department_code @Model.DepartmentName(p.clinical_department_code)</td>
+                                    <td>@p.ward_code</td>
+                                    <td>@Model.WardName(p.ward_code)</td>
+                                    <td>@p.room_code</td>
+                                    <td>@Model.RoomName(p.room_code)</td>
+                                    <td>@p.bed_code</td>
+                                    <td>@Model.BedName(p.bed_code)</td>
+                                    <td>@p.clinical_department_code</td>
+                                    <td>@Model.DepartmentName(p.clinical_department_code)</td>
                                     <td>@p.doctor_code @p.doctor_name</td>
                                     <td>@p.addition_type</td>
                                 </tr>
@@ -88,8 +98,12 @@ else
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>時間区分</th><th class="text-danger">食種</th><th class="text-master-pending">食事形態コード</th><th class="text-master-pending">配膳区分コード</th>
-                                <th class="text-danger">主食</th><th>主食量</th><th>特食加算</th>
+                                <th>時間区分</th>
+                                <th class="col-code">食種コード</th><th class="col-master-name">食種名</th>
+                                <th class="col-code">食事形態コード</th><th class="col-master-missing">食事形態名(マスタ未実装)</th>
+                                <th class="col-code">配膳区分コード</th><th class="col-master-missing">配膳区分名(マスタ未実装)</th>
+                                <th class="col-code">主食コード</th><th class="col-master-name">主食名</th>
+                                <th>主食量</th><th>特食加算</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -97,10 +111,14 @@ else
                             {
                                 <tr>
                                     <td>@M_View_OrderDetail.MealTimeText(m.meal_time_code)</td>
-                                    <td>@m.meal_code @Model.MealName(m.meal_code)</td>
+                                    <td>@m.meal_code</td>
+                                    <td>@Model.MealName(m.meal_code)</td>
                                     <td>@m.meal_form_code</td>
+                                    <td></td>
                                     <td>@m.serving_category_code</td>
-                                    <td>@m.main_dish_code @Model.MainDishName(m.main_dish_code)</td>
+                                    <td></td>
+                                    <td>@m.main_dish_code</td>
+                                    <td>@Model.MainDishName(m.main_dish_code)</td>
                                     <td>@m.main_dish_amout</td>
                                     <td>@m.addition_type</td>
                                 </tr>
@@ -122,7 +140,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>製品コード</th><th class="text-master-pending">製品名</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th class="col-code">製品コード</th><th class="col-master-missing">製品名(マスタ未実装)</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var t in Model.TubeFeedings)
@@ -151,7 +169,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-master-pending">内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th class="col-code">コード</th><th class="col-master-missing">内容(マスタ未実装)</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.Comments)
@@ -180,7 +198,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-danger">内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th class="col-code">コード</th><th class="col-master-name">内容</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.ContraComments)
@@ -209,7 +227,7 @@ else
                 <div class="table-responsive border">
                     <table class="table table-bordered table-striped table-sm align-middle mb-0">
                         <thead>
-                            <tr><th>時間区分</th><th>並び順</th><th>コード</th><th class="text-danger">内容</th></tr>
+                            <tr><th>時間区分</th><th>並び順</th><th class="col-code">コード</th><th class="col-master-name">内容</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in Model.OtherComments)
