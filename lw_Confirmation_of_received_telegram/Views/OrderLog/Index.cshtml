@@ -3,8 +3,9 @@
     ViewData["Title"] = "患者検索";
 }
 
-@* 最新の受信電文（全患者・無効含む）。患者番号を知らなくても受信状況が分かる欄。
-   下の検索結果と見分けるため緑ベース配色＋クリックで開閉（既定は開） *@
+@* 最新の受信電文欄は連携テスト完了により非表示（2026-09-18）。
+   復活させる場合は下のブロックのコメントを外し、OrderLogController.Index の
+   LatestLogs 取得処理（同日にコメントアウト）も戻すこと。
 <details open class="latest-log-panel mt-2">
     <summary class="h6 mb-1">最新の受信電文（全患者・最新300件）［クリックで開閉］</summary>
     @if (Model.LatestLogsError != "")
@@ -20,6 +21,7 @@
         <partial name="_LatestOrderLogTable" model="Model" />
     }
 </details>
+*@
 
 @* 屋宜原版 MainWindow 上部と同じ構成: 患者番号 → 表示ボタン → 無効/削除データの表示。右端に検索件数 *@
 <form method="get" asp-controller="OrderLog" asp-action="Index" class="row g-2 align-items-center mb-3 mt-3">
@@ -38,7 +40,9 @@
         </div>
     </div>
     <div class="col-auto ms-auto">
-        <a class="btn btn-outline-danger btn-sm fw-bold" asp-controller="MealPlan" asp-action="Index">食事一覧（開発中）</a>
+        @* WPF版の右上「閉じる」に相当。別タブで開かれたこの画面を閉じる（＝食事一覧のタブに戻る）。
+           直接URLで開かれていて閉じられない場合は食事一覧へ遷移する *@
+        <button type="button" class="btn btn-outline-danger fw-bold" onclick="closePatientSearch()">閉じる</button>
     </div>
     @if (Model.Searched && Model.IsConnected)
     {
@@ -81,3 +85,12 @@ else
         <p class="text-muted mt-3">一覧の「詳細」を押すと、その電文の展開データがここに表示されます。</p>
     }
 }
+
+<script>
+    // 「閉じる」: 別タブとして開かれていればタブごと閉じる（＝食事一覧のタブに戻る）。
+    // 直接URLで開かれていて閉じられない場合（ブラウザが拒否）は食事一覧へ移動する
+    function closePatientSearch() {
+        window.close();
+        setTimeout(function () { window.location.href = '@Url.Action("Index", "MealPlan")'; }, 200);
+    }
+</script>

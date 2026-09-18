@@ -26,8 +26,9 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+// トップ画面は食事一覧（/ = MealPlan/Index）。患者検索は /OrderLog
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=OrderLog}/{action=Index}/{id?}");
+    pattern: "{controller=MealPlan}/{action=Index}/{id?}");
 
 app.Run();
