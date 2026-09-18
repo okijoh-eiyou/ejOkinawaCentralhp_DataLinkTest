@@ -1,0 +1,147 @@
+@model lw_Confirmation_of_received_telegram.Models.M_View_MasterEditPage
+@{
+    ViewData["Title"] = Model.Def.DisplayName;
+    var editing = Model.Adding || Model.EditId != null;
+
+    // 編集行・新規追加行の入力欄の表示値（編集開始時は現在値、検証エラー時は入力値）
+    string Val(string columnName) => Model.EditValues.GetValueOrDefault(columnName, "");
+}
+
+<div class="d-flex align-items-center gap-2 mb-2 mt-2">
+    <h4 class="mb-0">@Model.Def.DisplayName</h4>
+    <span class="text-muted">@Model.Def.TableName</span>
+    <a class="btn btn-outline-secondary ms-auto" asp-action="Index">マスタ一覧へ戻る</a>
+</div>
+
+<div class="alert alert-warning py-1 mb-2">
+    <strong>プレビュー版</strong>：保存・削除はまだDBに書き込みません（入力チェック・コード重複チェックのみ動きます）。
+</div>
+
+@if (Model.Messages.Count > 0)
+{
+    <div class="alert alert-@Model.MessageKind py-1 mb-2">
+        @foreach (var message in Model.Messages)
+        {
+            <div>@message</div>
+        }
+    </div>
+}
+
+@if (!Model.IsConnected)
+{
+    <div class="alert alert-danger">
+        <strong>データ取得：失敗</strong>
+        <p class="mb-0">@Model.ErrorMessage</p>
+    </div>
+}
+else
+{
+    @* 保存フォームの本体。<form> は <tr> をまたげないため空フォームを置き、
+       編集行の入力欄は form="masterSaveForm" 属性でここに紐づける *@
+    <form id="masterSaveForm" method="post" asp-action="Save" asp-route-table="@Model.Def.Slug"></form>
+
+    @if (!editing)
+    {
+        <p class="mb-2">
+            <a class="btn btn-success btn-sm" asp-action="Edit"
+               asp-route-table="@Model.Def.Slug" asp-route-adding="true">新規追加</a>
+        </p>
+    }
+
+    <div class="table-responsive border sticky-header-scroll">
+        <table class="table table-bordered table-striped table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    @foreach (var col in Model.Def.Columns)
+                    {
+                        <th>@col.Label@(col.Required ? " *" : "")</th>
+                    }
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Adding)
+                {
+                    <tr class="table-warning">
+                        @foreach (var col in Model.Def.Columns)
+                        {
+                            <td>
+                                @if (col.IsInt)
+                                {
+                                    <input type="number" class="form-control form-control-sm" style="min-width: 5em;"
+                                           name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
+                                }
+                                else
+                                {
+                                    <input type="text" class="form-control form-control-sm" style="min-width: 6em;"
+                                           maxlength="@col.MaxLength"
+                                           name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
+                                }
+                            </td>
+                        }
+                        <td class="text-nowrap">
+                            <button type="submit" class="btn btn-sm btn-primary" form="masterSaveForm">保存</button>
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Edit"
+                               asp-route-table="@Model.Def.Slug">取消</a>
+                        </td>
+                    </tr>
+                }
+                @foreach (var r in Model.Rows)
+                {
+                    @if (Model.EditId == r.Id)
+                    {
+                        <tr class="table-warning">
+                            @foreach (var col in Model.Def.Columns)
+                            {
+                                <td>
+                                    @if (col.IsInt)
+                                    {
+                                        <input type="number" class="form-control form-control-sm" style="min-width: 5em;"
+                                               name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control form-control-sm" style="min-width: 6em;"
+                                               maxlength="@col.MaxLength"
+                                               name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
+                                    }
+                                </td>
+                            }
+                            <td class="text-nowrap">
+                                <input type="hidden" name="id" value="@r.Id" form="masterSaveForm" />
+                                <button type="submit" class="btn btn-sm btn-primary" form="masterSaveForm">保存</button>
+                                <a class="btn btn-sm btn-outline-secondary" asp-action="Edit"
+                                   asp-route-table="@Model.Def.Slug">取消</a>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            @foreach (var col in Model.Def.Columns)
+                            {
+                                <td>@r.Values.GetValueOrDefault(col.ColumnName, "")</td>
+                            }
+                            <td class="text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="Edit"
+                                   asp-route-table="@Model.Def.Slug" asp-route-editId="@r.Id">編集</a>
+                                @* 削除フォームは <td> の中で完結するのでそのまま置ける *@
+                                <form method="post" asp-action="Delete" asp-route-table="@Model.Def.Slug" class="d-inline"
+                                      onsubmit="return confirm('この行を削除しますか？（プレビュー版のため実際には削除されません）');">
+                                    <input type="hidden" name="id" value="@r.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="text-muted small mt-1">@Model.Rows.Count 件（* は必須項目）</p>
+
+    @if (Model.Rows.Count == 0 && !Model.Adding)
+    {
+        <p>データがありません。「新規追加」から登録できます。</p>
+    }
+}

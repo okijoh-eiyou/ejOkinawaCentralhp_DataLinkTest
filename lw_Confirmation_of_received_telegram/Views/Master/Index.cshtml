@@ -1,0 +1,31 @@
+@model List<lw_Confirmation_of_received_telegram.Models.M_View_MasterDef>
+@{
+    ViewData["Title"] = "マスタ保守";
+}
+
+<div class="d-flex align-items-center mb-2 mt-2">
+    <h4 class="mb-0">マスタ保守</h4>
+    @* 患者検索と同じ子タブ方式（食事一覧から別タブで開く）。閉じるで元のタブに戻る *@
+    <button type="button" class="btn btn-outline-secondary ms-auto" onclick="closeMasterWindow()">閉じる</button>
+</div>
+
+<div class="alert alert-warning py-1 mb-2">
+    <strong>プレビュー版</strong>：画面と入力チェックのみ動きます。保存・削除はまだDBに書き込みません
+    （読み取り専用ルールの改定を上司と合意後に有効化します）。
+</div>
+
+@* マスタ名のみのボタンを優先順（★禁止コメント→★その他コメント→〇食種→残りはDDL番号順）に縦へ並べる *@
+<div class="d-grid gap-2" style="max-width: 20rem;">
+    @foreach (var def in Model)
+    {
+        <a class="btn btn-outline-primary" asp-action="Edit" asp-route-table="@def.Slug">@def.DisplayName</a>
+    }
+</div>
+
+<script>
+    // 別タブで開かれた前提の「閉じる」。window.close が効かない開き方のときは食事一覧へ遷移でフォールバック
+    function closeMasterWindow() {
+        window.close();
+        setTimeout(function () { location.href = '@Url.Action("Index", "MealPlan")'; }, 200);
+    }
+</script>
