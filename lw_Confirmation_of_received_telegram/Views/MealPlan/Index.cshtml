@@ -146,7 +146,8 @@
                 </div>
                 <div class="mb-2">
                     <label class="form-label mb-1" for="mealCode">食種</label>
-                    <select name="mealCode" id="mealCode" class="form-select" form="mealSearchForm">
+                    @* 選択肢が多い（400件超）ため、7行だけ見せてあとはスクロールにする *@
+                    <select name="mealCode" id="mealCode" size="7" class="form-select" form="mealSearchForm">
                         <option value="">（すべて）</option>
                         @foreach (var o in Model.MealOptions)
                         {
@@ -163,7 +164,8 @@
                 </div>
                 <div class="mb-2">
                     <label class="form-label mb-1" for="mainDishCode">主食</label>
-                    <select name="mainDishCode" id="mainDishCode" class="form-select" form="mealSearchForm">
+                    @* 7行だけ見せてあとはスクロール *@
+                    <select name="mainDishCode" id="mainDishCode" size="7" class="form-select" form="mealSearchForm">
                         <option value="">（すべて）</option>
                         @foreach (var o in Model.MainDishOptions)
                         {
@@ -180,10 +182,7 @@
                 </div>
             </div>
             <div class="modal-footer py-2">
-                @* 解除＝フィルタなしで再表示（日付・食事区分・コード非表示は維持） *@
-                <a class="btn btn-outline-secondary" asp-action="Index"
-                   asp-route-date="@dateStr" asp-route-mealType="@Model.MealType"
-                   asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()">解除</a>
+                @* 「解除」ボタンは廃止（2026-09-18）。フィルタを外すときは各リストで（すべて）を選んで絞り込む *@
                 <button type="submit" class="btn btn-primary" form="mealSearchForm">絞り込み</button>
             </div>
         </div>
