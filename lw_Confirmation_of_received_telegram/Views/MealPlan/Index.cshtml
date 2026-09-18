@@ -45,6 +45,12 @@
     </div>
     *@
     @* 「患者番号より履歴表示」ボタンは非表示（行ごとの「履歴」ボタンに置き換えたため。2026-08-19） *@
+    <div class="col-auto ms-auto">
+        @* 患者検索は別タブで開く（WPFの子画面方式。閉じるとこの食事一覧タブに戻る）。
+           rel="opener" は患者検索側の「閉じる」ボタン（window.close）を効かせるために必要 *@
+        <a class="btn btn-outline-primary" asp-controller="OrderLog" asp-action="Index"
+           target="_blank" rel="opener">患者検索</a>
+    </div>
 </form>
 
 <div class="alert alert-info py-1 mb-2">
@@ -95,9 +101,10 @@ else
                 {
                     <tr>
                         <td>
-                            @* WPF版の「行を選択→患者番号より履歴表示」に相当（この患者の番号を持って履歴画面へ） *@
+                            @* WPF版の「行を選択→患者番号より履歴表示」に相当（この患者の番号を持って別タブで開く） *@
                             <a class="btn btn-sm btn-outline-primary" asp-controller="OrderLog" asp-action="Index"
-                               asp-route-patientNumber="@r.PatientNumber" asp-route-showInactive="true">履歴</a>
+                               asp-route-patientNumber="@r.PatientNumber" asp-route-showInactive="true"
+                               target="_blank" rel="opener">履歴</a>
                         </td>
                         <td>@r.ReasonText</td>
                         <td>@r.ChangeMark</td>
