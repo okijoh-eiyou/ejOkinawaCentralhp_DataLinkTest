@@ -30,7 +30,8 @@
                placeholder="患者番号" value="@Model.PatientNumber" />
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-primary px-4">表示</button>
+        @* 配色は食事一覧の「患者検索」ボタンと同じ緑地・白文字 *@
+        <button type="submit" class="btn btn-success px-4">検索</button>
     </div>
     <div class="col-auto">
         <div class="form-check">
@@ -42,7 +43,7 @@
     <div class="col-auto ms-auto">
         @* WPF版の右上「閉じる」に相当。別タブで開かれたこの画面を閉じる（＝食事一覧のタブに戻る）。
            直接URLで開かれていて閉じられない場合は食事一覧へ遷移する *@
-        <button type="button" class="btn btn-outline-danger fw-bold" onclick="closePatientSearch()">閉じる</button>
+        <button type="button" class="btn btn-outline-secondary fw-bold" onclick="closePatientSearch()">閉じる</button>
     </div>
     @if (Model.Searched && Model.IsConnected)
     {
@@ -54,7 +55,7 @@
 
 @if (!Model.Searched)
 {
-    <p class="text-muted">患者番号を入力して「表示」を押してください。</p>
+    <p class="text-muted">患者番号を入力して「検索」を押してください。</p>
 }
 else if (!Model.IsConnected)
 {
@@ -80,10 +81,7 @@ else
     {
         <partial name="_OrderDetailTables" model="Model.Detail" />
     }
-    else
-    {
-        <p class="text-muted mt-3">一覧の「詳細」を押すと、その電文の展開データがここに表示されます。</p>
-    }
+    @* 「詳細を押すと〜」の案内文は非表示（2026-09-18。本番の見た目に合わせる） *@
 }
 
 <script>

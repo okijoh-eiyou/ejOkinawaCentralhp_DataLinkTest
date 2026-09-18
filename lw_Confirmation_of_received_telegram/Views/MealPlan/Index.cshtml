@@ -1,14 +1,36 @@
-@model lw_Confirmation_of_received_telegram.Models.M_View_MealPlanPage
+@model lw_Confirmation_of_received_telegram.Models.M_View_MealPlanJsonPage
 @{
     ViewData["Title"] = "食事一覧";
     var dateStr = Model.TargetDate.ToString("yyyy-MM-dd");
+
+    // 日付の隣に出す曜日。日曜=赤・土曜=青・平日=黒
+    var weekday = "日月火水木金土"[(int)Model.TargetDate.DayOfWeek];
+    var weekdayClass = Model.TargetDate.DayOfWeek switch
+    {
+        DayOfWeek.Sunday => "text-danger",
+        DayOfWeek.Saturday => "text-primary",
+        _ => "",
+    };
 }
 
 @* 屋宜原版 Meal_Information トップ画面と同じ構成:
    日付 → 食事区分 → ←/本日/→ → 機能ボタン群（未実装は非活性） → 患者番号より履歴表示 *@
-<form method="get" asp-controller="MealPlan" asp-action="Index" class="row g-2 align-items-center mb-2 mt-2">
+<form id="mealSearchForm" method="get" asp-controller="MealPlan" asp-action="Index" class="row g-2 align-items-center mb-2 mt-2">
     <div class="col-auto">
-        <input type="date" name="date" value="@dateStr" class="form-control" />
+        @* 日付のすぐ後ろに曜日（2026/09/18(月) のように連続表示）、枠の右端にカレンダーボタン。
+           日付入力に元々付いているカレンダーアイコンはCSSで隠し、右端のボタンから開く。日曜=赤・土曜=青 *@
+        <div class="form-control date-with-weekday">
+            <input type="date" id="mealDate" name="date" value="@dateStr" />
+            <span class="fw-bold @weekdayClass">(@weekday)</span>
+            <button type="button" class="date-picker-btn" onclick="openMealDatePicker()"
+                    title="カレンダーを開く" aria-label="カレンダーを開く">
+                @* カレンダーアイコン（Bootstrap Icons の calendar をインラインSVGで埋め込み。CDN不要） *@
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                     viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                </svg>
+            </button>
+        </div>
     </div>
     <div class="col-auto">
         <select name="mealType" class="form-select">
@@ -26,37 +48,160 @@
         </select>
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-primary">表示</button>
+        <button type="submit" class="btn btn-primary btn-main-action">
+            @* 虫眼鏡アイコン（Bootstrap Icons の search をインラインSVGで埋め込み。CDN不要） *@
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" fill="currentColor"
+                 viewBox="0 0 16 16" style="vertical-align: -0.15em;" aria-hidden="true">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5C12 9.538 9.538 12 6.5 12S1 9.538 1 6.5 3.462 1 6.5 1 12 3.462 12 6.5z"/>
+            </svg>
+            検索
+        </button>
     </div>
-    <div class="col-auto btn-group">
+    @* 検索ボタンとは関連が薄いので少し距離を空ける（ms-4） *@
+    <div class="col-auto btn-group ms-4">
+        @* 前日/今日/翌日の移動でも、食事区分・コード非表示・フィルタの選択は引き継ぐ *@
         <a class="btn btn-outline-secondary" asp-action="Index"
-           asp-route-date="@Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType">&lt;</a>
-        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-mealType="@Model.MealType">今日</a>
+           asp-route-date="@Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType"
+           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
+           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
+           asp-route-mainDishCode="@Model.MainDishCode">&lt;</a>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-mealType="@Model.MealType"
+           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
+           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
+           asp-route-mainDishCode="@Model.MainDishCode">今日</a>
         <a class="btn btn-outline-secondary" asp-action="Index"
-           asp-route-date="@Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType">&gt;</a>
+           asp-route-date="@Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType"
+           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
+           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
+           asp-route-mainDishCode="@Model.MainDishCode">&gt;</a>
     </div>
-    @* 機能ボタン群は当面非表示（2026-09-17）。
-       「フィルタ表示」「帳票出力」「マスタ保守」は実装するときに下のブロックを復活させる。
-       「食札印刷」「色設定」は使わないことが決まったため削除済み（復活対象外）。
-    <div class="col-auto" style="margin-left: 12rem;">
-        <button type="button" class="btn btn-secondary" disabled>フィルタ表示</button>
-        <button type="button" class="btn btn-secondary" disabled>帳票出力</button>
-        <button type="button" class="btn btn-secondary" disabled>マスタ保守</button>
+    @* 機能ボタン3つは連結（btn-group）。「< 今日 >」とは関連が薄いので大きく距離を空ける（ms-5 = 3rem） *@
+    <div class="col-auto btn-group ms-5">
+        @* フィルタは小ウィンドウ（モーダル）で開く。フィルタが効いている間は青塗りで明示 *@
+        <button type="button" class="btn @(Model.FilterActive ? "btn-primary" : "btn-outline-primary")"
+                data-bs-toggle="modal" data-bs-target="#filterModal">フィルタ表示</button>
+        @* 帳票出力は未実装（押しても何も起きない）。配色はマスタ保守と揃える *@
+        <button type="button" class="btn btn-outline-primary">帳票出力</button>
+        @* マスタ保守はプレビュー版（画面のみ。保存はまだDBに書き込まない）。別タブの子画面方式 *@
+        <a class="btn btn-outline-primary" asp-controller="Master" asp-action="Index"
+           target="_blank" rel="opener">マスタ保守</a>
     </div>
-    *@
     @* 「患者番号より履歴表示」ボタンは非表示（行ごとの「履歴」ボタンに置き換えたため。2026-08-19） *@
     <div class="col-auto ms-auto">
+        <div class="form-check">
+            @* コード系（列名に「コード」を含む列）の表示切替。既定は非表示＝本番の見た目。
+               マスタ解決できていない値の突き合わせをしたいときはチェックを外す。
+               いずれ廃止予定のため右端（患者検索の隣）に寄せてある。
+               hidden の false はチェックOFF時にも値を送るための定石 *@
+            <input type="checkbox" id="hideCodes" name="hideCodes" value="true" class="form-check-input"
+                   checked="@(Model.HideCodes ? "checked" : null)" />
+            <input type="hidden" name="hideCodes" value="false" />
+            <label class="form-check-label" for="hideCodes">コード系を非表示</label>
+        </div>
+    </div>
+    <div class="col-auto">
         @* 患者検索は別タブで開く（WPFの子画面方式。閉じるとこの食事一覧タブに戻る）。
            rel="opener" は患者検索側の「閉じる」ボタン（window.close）を効かせるために必要 *@
-        <a class="btn btn-outline-primary" asp-controller="OrderLog" asp-action="Index"
-           target="_blank" rel="opener">患者検索</a>
+        <a class="btn btn-success btn-main-action" asp-controller="OrderLog" asp-action="Index"
+           target="_blank" rel="opener">
+            @* 人型アイコン（Bootstrap Icons の person-fill をインラインSVGで埋め込み。CDN不要） *@
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.1em" height="1.1em" fill="currentColor"
+                 viewBox="0 0 16 16" style="vertical-align: -0.15em;" aria-hidden="true">
+                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1z"/>
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+            </svg>
+            患者検索
+        </a>
     </div>
+
 </form>
 
-<div class="alert alert-info py-1 mb-2">
-    この一覧は <strong>lw_meal_plan</strong>（食事計画テーブル）を目次にした本物のデータです。
-    計画が生成されている日付のみ表示されます（表示内容は展開テーブルから取得。Disp_Json対応はキー設計の確定待ち）
+@* フィルタは小ウィンドウ（Bootstrapモーダル）。選択肢は各マスタから。
+   select は form 属性でメインのGETフォーム（mealSearchForm）に紐づくため、
+   モーダルを閉じていても選択値は「検索」やナビの送信に乗る *@
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 24rem;">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title fs-6" id="filterModalLabel">表示フィルタ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label mb-1" for="wardCode">病棟</label>
+                    <select name="wardCode" id="wardCode" class="form-select" form="mealSearchForm">
+                        <option value="">（すべて）</option>
+                        @foreach (var o in Model.WardOptions)
+                        {
+                            if (o.code == Model.WardCode)
+                            {
+                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
+                            }
+                            else
+                            {
+                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1" for="mealCode">食種</label>
+                    <select name="mealCode" id="mealCode" class="form-select" form="mealSearchForm">
+                        <option value="">（すべて）</option>
+                        @foreach (var o in Model.MealOptions)
+                        {
+                            if (o.code == Model.MealCode)
+                            {
+                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
+                            }
+                            else
+                            {
+                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label mb-1" for="mainDishCode">主食</label>
+                    <select name="mainDishCode" id="mainDishCode" class="form-select" form="mealSearchForm">
+                        <option value="">（すべて）</option>
+                        @foreach (var o in Model.MainDishOptions)
+                        {
+                            if (o.code == Model.MainDishCode)
+                            {
+                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
+                            }
+                            else
+                            {
+                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                @* 解除＝フィルタなしで再表示（日付・食事区分・コード非表示は維持） *@
+                <a class="btn btn-outline-secondary" asp-action="Index"
+                   asp-route-date="@dateStr" asp-route-mealType="@Model.MealType"
+                   asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()">解除</a>
+                <button type="submit" class="btn btn-primary" form="mealSearchForm">絞り込み</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+@* ヒット件数はツールバーの真下に出す *@
+@if (Model.IsConnected)
+{
+    <p class="text-muted small mb-2">@Model.TargetDate.ToString("yyyy/MM/dd") ・ @Model.Rows.Count 名</p>
+}
+
+@* 説明バナーは本番の見た目に近づけるため非表示（2026-09-18）
+<div class="alert alert-info py-1 mb-2">
+    この一覧は <strong>lw_meal_plan</strong> の <strong>disp_json</strong>（表示用データ）をそのまま表示しています
+    （列＝JSONのキー・jsonbが返す順。disp_json が未生成の行は患者番号のみ表示）
+</div>
+*@
 
 @if (!Model.IsConnected)
 {
@@ -72,28 +217,25 @@ else if (Model.Rows.Count == 0)
 }
 else
 {
-    <div class="table-responsive border">
+    @* コード系（列名に「コード」を含む）はチェックで非表示にできる *@
+    var visibleColumns = Model.HideCodes
+        ? Model.Columns.Where(c => !c.Contains("コード")).ToList()
+        : Model.Columns;
+
+    @* コメント系（列名に「コメント」を含む）と食種名は全角10文字幅で折り返す *@
+    string CellClass(string col) => col.Contains("コメント") || col == "食種名" ? "col-comment" : "";
+
+    <div class="table-responsive border sticky-header-scroll">
         <table class="table table-bordered table-striped table-sm align-middle mb-0">
             <thead>
                 <tr>
                     <th>履歴</th>
-                    <th>理由区分</th>
-                    <th>変更</th>
-                    <th class="col-code">病棟CD</th>
-                    <th class="col-master-name">病棟名</th>
-                    <th class="col-code">病室CD</th>
-                    <th class="col-master-name">病室名</th>
-                    <th>患者番号</th>
-                    <th>患者名</th>
-                    <th>カナ氏名</th>
-                    <th>食事区分</th>
-                    <th class="col-code">食種CD</th>
-                    <th class="col-master-name">食種名</th>
-                    <th class="col-code">主食CD</th>
-                    <th class="col-master-name">主食名</th>
-                    <th class="col-master-missing">コメント内容(マスタ未実装)</th>
-                    <th class="col-master-name">禁止コメント内容</th>
-                    <th>フリーコメント</th>
+                    @* 列ラベルは disp_json のキーそのまま（jsonbが返す順）。
+                       コード系（「コード系を非表示」チェックOFFで出る列）のラベルは赤にする *@
+                    @foreach (var col in visibleColumns)
+                    {
+                        <th class="@CellClass(col) @(col.Contains("コード") ? "col-code" : "")">@col</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -101,32 +243,59 @@ else
                 {
                     <tr>
                         <td>
-                            @* WPF版の「行を選択→患者番号より履歴表示」に相当（この患者の番号を持って別タブで開く） *@
-                            <a class="btn btn-sm btn-outline-primary" asp-controller="OrderLog" asp-action="Index"
+                            @* WPF版の「行を選択→患者番号より履歴表示」に相当（この患者の番号を持って別タブで開く）。
+                               検索用には先頭ゼロ付きの原値を渡す *@
+                            <a class="btn btn-sm btn-outline-success" asp-controller="OrderLog" asp-action="Index"
                                asp-route-patientNumber="@r.PatientNumber" asp-route-showInactive="true"
                                target="_blank" rel="opener">履歴</a>
                         </td>
-                        <td>@r.ReasonText</td>
-                        <td>@r.ChangeMark</td>
-                        <td>@r.WardCode</td>
-                        <td>@r.WardName</td>
-                        <td>@r.RoomCode</td>
-                        <td>@r.RoomName</td>
-                        <td>@r.PatientNumber</td>
-                        <td>@r.KanjiName</td>
-                        <td>@r.KanaName</td>
-                        <td>@r.MealTimeText</td>
-                        <td>@r.MealCode</td>
-                        <td>@r.MealName</td>
-                        <td>@r.MainDishCode</td>
-                        <td>@r.MainDishName</td>
-                        <td>@r.CommentText</td>
-                        <td>@r.ContraText</td>
-                        <td>@r.FreeComment</td>
+                        @if (r.HasJson)
+                        {
+                            foreach (var col in visibleColumns)
+                            {
+                                var cellValue = r.Values.GetValueOrDefault(col, "");
+                                <td class="@CellClass(col)">
+                                    @if (col.Contains("コメント内容") && cellValue.Contains(','))
+                                    {
+                                        @* 「,」区切りの複数コメントは 1つ目=赤 2つ目=オレンジ 3つ目=緑（4つ目以降は繰り返し）。
+                                           フリーコメントは自由文で「,」が混ざり得るため対象外（コメント内容系の列のみ） *@
+                                        var parts = cellValue.Split(',');
+                                        for (var i = 0; i < parts.Length; i++)
+                                        {
+                                            <span class="csv-item-@(i % 3 + 1)">@parts[i]</span>@(i < parts.Length - 1 ? "," : "")
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @cellValue
+                                    }
+                                </td>
+                            }
+                        }
+                        else
+                        {
+                            @* disp_json 未生成の行: 患者番号だけ出して残りは空欄 *@
+                            foreach (var col in visibleColumns)
+                            {
+                                <td class="@CellClass(col)">@(col == "患者番号" ? r.DisplayPatientNumber : "")</td>
+                            }
+                        }
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-    <p class="text-muted small mt-1">@Model.TargetDate.ToString("yyyy/MM/dd") ・ @Model.Rows.Count 名</p>
 }
+
+<script>
+    // 右端のカレンダーボタンから日付入力のネイティブピッカーを開く
+    // （showPicker 非対応の古いブラウザでは入力欄へフォーカスするだけにする）
+    function openMealDatePicker() {
+        var input = document.getElementById('mealDate');
+        try {
+            input.showPicker();
+        } catch (e) {
+            input.focus();
+        }
+    }
+</script>

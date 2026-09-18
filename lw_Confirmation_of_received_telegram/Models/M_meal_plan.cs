@@ -25,5 +25,8 @@ namespace lw_Confirmation_of_received_telegram.Models
 
         /// <summary>患者番号</summary>
         public string patient_number { get; set; } = "";
+
+        /// <summary>表示用データJSONの文字列表現（SELECTで disp_json::text AS disp_json_text と別名を付けたときだけ入る）</summary>
+        public string? disp_json_text { get; set; }
     }
 }
