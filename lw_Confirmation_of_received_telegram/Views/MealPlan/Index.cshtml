@@ -59,21 +59,14 @@
     </div>
     @* 検索ボタンとは関連が薄いので少し距離を空ける（ms-4） *@
     <div class="col-auto btn-group ms-4">
-        @* 前日/今日/翌日の移動でも、食事区分・コード非表示・フィルタの選択は引き継ぐ *@
-        <a class="btn btn-outline-secondary" asp-action="Index"
-           asp-route-date="@Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType"
-           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
-           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
-           asp-route-mainDishCode="@Model.MainDishCode">&lt;</a>
-        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-mealType="@Model.MealType"
-           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
-           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
-           asp-route-mainDishCode="@Model.MainDishCode">今日</a>
-        <a class="btn btn-outline-secondary" asp-action="Index"
-           asp-route-date="@Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd")" asp-route-mealType="@Model.MealType"
-           asp-route-hideCodes="@Model.HideCodes.ToString().ToLower()"
-           asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
-           asp-route-mainDishCode="@Model.MainDishCode">&gt;</a>
+        @* 前日/今日/翌日の移動でも、食事区分・コード非表示・フィルタの選択は引き継ぐ。
+           フィルタは複数値（配列）のため asp-route ではなく Url.Action で組み立てる *@
+        <a class="btn btn-outline-secondary"
+           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">&lt;</a>
+        <a class="btn btn-outline-secondary"
+           href="@Url.Action("Index", new { mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">今日</a>
+        <a class="btn btn-outline-secondary"
+           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">&gt;</a>
     </div>
     @* 機能ボタンは連結（btn-group）。「< 今日 >」とは関連が薄いので大きく距離を空ける（ms-5 = 3rem）。
        「帳票出力」はWeb版では不要になったため削除済み（2026-09-19 ミーティング。復活対象外） *@
@@ -81,7 +74,7 @@
         @* フィルタは小ウィンドウ（モーダル）で開く。フィルタが効いている間は青塗りで明示 *@
         <button type="button" class="btn @(Model.FilterActive ? "btn-primary" : "btn-outline-primary")"
                 data-bs-toggle="modal" data-bs-target="#filterModal">フィルタ表示</button>
-        @* マスタ保守はプレビュー版（画面のみ。保存はまだDBに書き込まない）。別タブの子画面方式 *@
+        @* マスタ保守（lw_m_* 8マスタの追加・変更・削除）。別タブの子画面方式 *@
         <a class="btn btn-outline-primary" asp-controller="Master" asp-action="Index"
            target="_blank" rel="opener">マスタ保守</a>
     </div>
@@ -119,69 +112,66 @@
    select は form 属性でメインのGETフォーム（mealSearchForm）に紐づくため、
    モーダルを閉じていても選択値は「検索」やナビの送信に乗る *@
 <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 24rem;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 46rem;">
         <div class="modal-content">
             <div class="modal-header py-2">
                 <h5 class="modal-title fs-6" id="filterModalLabel">表示フィルタ</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-2">
-                    <label class="form-label mb-1" for="wardCode">病棟</label>
-                    <select name="wardCode" id="wardCode" class="form-select" form="mealSearchForm">
-                        <option value="">（すべて）</option>
+                @* 病棟・食種・主食は横並びのチェックボックスリスト（2026-09-19 複数選択式に変更）。
+                   同じリスト内の複数チェックは「どれかに一致（OR）」、リスト同士は掛け合わせ（AND）。
+                   チェックなし＝そのリストは絞り込まない（旧「（すべて）」相当） *@
+                <div class="row g-3">
+                <div class="col-4">
+                    <label class="form-label mb-1">病棟</label>
+                    <div class="border rounded filter-check-list">
                         @foreach (var o in Model.WardOptions)
                         {
-                            if (o.code == Model.WardCode)
-                            {
-                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
-                            }
-                            else
-                            {
-                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
-                            }
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="wardCode" value="@o.code"
+                                       id="ward_@(o.code)" form="mealSearchForm"
+                                       checked="@(Model.WardCodes.Contains(o.code) ? "checked" : null)" />
+                                <label class="form-check-label" for="ward_@(o.code)">@(o.name != "" ? o.name : o.code)</label>
+                            </div>
                         }
-                    </select>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <label class="form-label mb-1" for="mealCode">食種</label>
-                    @* 選択肢が多い（400件超）ため、7行だけ見せてあとはスクロールにする *@
-                    <select name="mealCode" id="mealCode" size="7" class="form-select" form="mealSearchForm">
-                        <option value="">（すべて）</option>
+                <div class="col-4">
+                    <label class="form-label mb-1">食種</label>
+                    <div class="border rounded filter-check-list">
                         @foreach (var o in Model.MealOptions)
                         {
-                            if (o.code == Model.MealCode)
-                            {
-                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
-                            }
-                            else
-                            {
-                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
-                            }
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="mealCode" value="@o.code"
+                                       id="meal_@(o.code)" form="mealSearchForm"
+                                       checked="@(Model.MealCodes.Contains(o.code) ? "checked" : null)" />
+                                <label class="form-check-label" for="meal_@(o.code)">@(o.name != "" ? o.name : o.code)</label>
+                            </div>
                         }
-                    </select>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <label class="form-label mb-1" for="mainDishCode">主食</label>
-                    @* 7行だけ見せてあとはスクロール *@
-                    <select name="mainDishCode" id="mainDishCode" size="7" class="form-select" form="mealSearchForm">
-                        <option value="">（すべて）</option>
+                <div class="col-4">
+                    <label class="form-label mb-1">主食</label>
+                    <div class="border rounded filter-check-list">
                         @foreach (var o in Model.MainDishOptions)
                         {
-                            if (o.code == Model.MainDishCode)
-                            {
-                                <option value="@o.code" selected>@(o.name != "" ? o.name : o.code)</option>
-                            }
-                            else
-                            {
-                                <option value="@o.code">@(o.name != "" ? o.name : o.code)</option>
-                            }
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="mainDishCode" value="@o.code"
+                                       id="mainDish_@(o.code)" form="mealSearchForm"
+                                       checked="@(Model.MainDishCodes.Contains(o.code) ? "checked" : null)" />
+                                <label class="form-check-label" for="mainDish_@(o.code)">@(o.name != "" ? o.name : o.code)</label>
+                            </div>
                         }
-                    </select>
+                    </div>
+                </div>
                 </div>
             </div>
             <div class="modal-footer py-2">
-                @* 「解除」ボタンは廃止（2026-09-18）。フィルタを外すときは各リストで（すべて）を選んで絞り込む *@
+                @* フィルタ一括解除＝全チェックを外した状態で再表示（日付・食事区分・コード非表示は維持）。
+                   me-auto で左端に寄せる（2026-09-19） *@
+                <a class="btn btn-outline-secondary me-auto"
+                   href="@Url.Action("Index", new { date = dateStr, mealType = Model.MealType, hideCodes = Model.HideCodes })">フィルタ一括解除</a>
                 <button type="submit" class="btn btn-primary" form="mealSearchForm">絞り込み</button>
             </div>
         </div>
@@ -210,8 +200,8 @@
 }
 else if (Model.Rows.Count == 0)
 {
+    @* 補足文「この日付の食事計画が未生成の可能性…」は出さない（2026-09-19 ミーティング） *@
     <p>データがありません。</p>
-    <p class="text-muted">この日付の食事計画が未生成の可能性があります（計画の生成はDB側の処理です）。</p>
 }
 else
 {
@@ -219,12 +209,21 @@ else
        理由区分_text は名前解決済みの表示用なので対象外（完全一致で判定する） *@
     bool IsCodeLike(string col) => col.Contains("コード") || col == "開始日" || col == "理由区分" || col == "開始時区分";
 
-    @* コメント内容の列は一番右に置く（2026-09-19 ミーティング） *@
-    var orderedColumns = Model.Columns.ToList();
-    if (orderedColumns.Remove("コメント内容"))
+    @* 列の並び順（2026-09-19 ミーティング指定。先頭の履歴ボタン列は固定）。
+       この指定に無い新キーが増えた場合は「指定列の後ろ・コード系の前」に出現順で出す。
+       コード系（非表示対象）はコメント内容より右＝右端に寄せる *@
+    var preferredOrder = new[]
     {
-        orderedColumns.Add("コメント内容");
-    }
+        "理由区分_text", "変更", "病室名", "病棟名", "ベッド名",
+        "患者番号", "患者カナ氏名", "患者漢字氏名",
+        "食種区分", "食種分類名称", "食種名", "主食名",
+        "フリーコメント", "禁止コメント内容", "その他コメント内容", "経管情報コメント内容", "コメント内容",
+    };
+    var orderedColumns =
+        preferredOrder.Where(c => Model.Columns.Contains(c))
+        .Concat(Model.Columns.Where(c => !preferredOrder.Contains(c) && !IsCodeLike(c)))
+        .Concat(Model.Columns.Where(c => IsCodeLike(c)))
+        .ToList();
 
     var visibleColumns = Model.HideCodes
         ? orderedColumns.Where(c => !IsCodeLike(c)).ToList()
@@ -232,6 +231,16 @@ else
 
     @* コメント系（列名に「コメント」を含む）と食種名は全角10文字幅で折り返す *@
     string CellClass(string col) => col.Contains("コメント") || col == "食種名" ? "col-comment" : "";
+
+    @* 画面に出す列名の読み替え（disp_jsonのキー → 表示ラベル。2026-09-19 ミーティング）。
+       データの取り出しは元のキーのまま行い、見出しの文字だけ変える *@
+    string HeaderLabel(string col) => col switch
+    {
+        "理由区分_text" => "理由区分",
+        "患者カナ氏名" => "カナ名",
+        "患者漢字氏名" => "患者名",
+        _ => col.EndsWith("コメント内容") ? col[..^2] : col,   // 「〜コメント内容」→「〜コメント」
+    };
 
     <div class="table-responsive border sticky-header-scroll">
         <table class="table table-bordered table-striped table-sm align-middle mb-0">
@@ -242,7 +251,7 @@ else
                        「コード系を非表示」の対象列は、表示したときラベルを赤にする *@
                     @foreach (var col in visibleColumns)
                     {
-                        <th class="@CellClass(col) @(IsCodeLike(col) ? "col-code" : "")">@col</th>
+                        <th class="@CellClass(col) @(IsCodeLike(col) ? "col-code" : "")">@HeaderLabel(col)</th>
                     }
                 </tr>
             </thead>

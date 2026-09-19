@@ -39,5 +39,18 @@ namespace lw_Confirmation_of_received_telegram.Services
                 return db.ExecuteScalar<T>(vSQL, vParam)!;
             }
         }
+
+        /// <summary>
+        /// INSERT/UPDATE/DELETE を実行して影響行数を返す。
+        /// 使ってよいのはマスタ保守（lw_m_* の8マスタ）だけ。業務テーブルへの書き込みは禁止のまま
+        /// （2026-09-19 ミーティングでマスタ保守の書き込みを有効化）。値は必ずパラメータ渡し
+        /// </summary>
+        public int Execute_SQL(string vSQL, object? vParam = null)
+        {
+            using (IDbConnection db = new NpgsqlConnection(ConnectionString))
+            {
+                return db.Execute(vSQL, vParam);
+            }
+        }
     }
 }

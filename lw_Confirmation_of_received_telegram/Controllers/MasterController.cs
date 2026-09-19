@@ -6,11 +6,9 @@ using lw_Confirmation_of_received_telegram.Services;
 namespace lw_Confirmation_of_received_telegram.Controllers;
 
 /// <summary>
-/// マスタ保守（プレビュー版・2026-09-18）。
-/// 一覧＋行内編集のUIまで実装済み。ただし【DBへの書き込み（INSERT/UPDATE/DELETE）は未実装】。
-/// CLAUDE.md の読み取り専用ルール（2026-07-31記録）の改定を上司と合意してから、
-/// Save/Delete の「※プレビュー版」ブロックに書き込み処理を実装する。
-/// それまでは入力チェックと重複チェック（SELECTのみ）だけが動く。
+/// マスタ保守。lw_m_* の8マスタ（M_View_MasterRegistry に固定登録）だけを追加・変更・削除できる。
+/// 2026-09-19 のミーティングで書き込みを有効化（それまではプレビュー版＝入力チェックのみだった）。
+/// 業務テーブル（lw_order_log・展開8テーブル・lw_meal_plan）への書き込みは引き続き禁止。
 /// SQLに使うテーブル名・列名は M_View_MasterRegistry の固定定義のみ。値は必ずパラメータ渡し。
 /// </summary>
 public class MasterController : Controller
@@ -68,8 +66,8 @@ public class MasterController : Controller
     }
 
     /// <summary>
-    /// 保存（id=null なら新規追加、あれば変更）。
-    /// ※プレビュー版: 入力チェック・重複チェックのみ実施し、DBへは書き込まない
+    /// 保存（id=null なら新規追加＝INSERT、あれば変更＝UPDATE）。
+    /// 入力チェック・キー重複チェックを通ったものだけ書き込む
     /// </summary>
     [HttpPost]
     public IActionResult Save(string table, int? id, Dictionary<string, string>? values)
@@ -88,7 +86,7 @@ public class MasterController : Controller
         var errors = Validate(def, cleaned, excludeId: id);
         if (errors.Count > 0)
         {
-            // エラー時は入力値を保持したまま同じ編集状態で再表示する
+            // エラー時は入力値を保持したまま編集パネルを開き直す
             var page = BuildEditPage(def, id, adding: id == null);
             page.EditValues = cleaned;
             page.Messages = errors;
@@ -96,15 +94,38 @@ public class MasterController : Controller
             return View("Edit", page);
         }
 
-        // ※プレビュー版: ここに INSERT / UPDATE を実装する（上司とルール改定合意後）。現時点では書き込まない
-        TempData["MasterMessage"] = id == null
-            ? "入力チェックOK（追加）。※プレビュー版のため、DBへは保存していません。"
-            : "入力チェックOK（変更）。※プレビュー版のため、DBへは保存していません。";
-        TempData["MasterMessageKind"] = "warning";
+        try
+        {
+            if (id == null)
+            {
+                InsertRow(def, cleaned);
+                TempData["MasterMessage"] = "追加しました。";
+                TempData["MasterMessageKind"] = "success";
+            }
+            else
+            {
+                var affected = UpdateRow(def, cleaned, id.Value);
+                TempData["MasterMessage"] = affected > 0
+                    ? "変更を保存しました。"
+                    : "対象の行が見つかりませんでした（既に削除された可能性があります）。";
+                TempData["MasterMessageKind"] = affected > 0 ? "success" : "warning";
+            }
+        }
+        catch (Exception ex)
+        {
+            // 書き込み失敗（一意制約違反や接続断など）は入力値を保持したままエラー表示
+            _logger.LogError(ex, "マスタ保存でDBエラー: {Table} id={Id}", def.TableName, id);
+            var page = BuildEditPage(def, id, adding: id == null);
+            page.EditValues = cleaned;
+            page.Messages = new List<string> { "保存できませんでした: " + ex.Message };
+            page.MessageKind = "danger";
+            return View("Edit", page);
+        }
+
         return RedirectToAction(nameof(Edit), new { table });
     }
 
-    /// <summary>削除。※プレビュー版: DBからは削除しない</summary>
+    /// <summary>削除（編集パネルの削除ボタンから。id指定の1行を実際に削除する）</summary>
     [HttpPost]
     public IActionResult Delete(string table, int id)
     {
@@ -114,10 +135,61 @@ public class MasterController : Controller
             return NotFound();
         }
 
-        // ※プレビュー版: ここに DELETE を実装する（上司とルール改定合意後）。現時点では書き込まない
-        TempData["MasterMessage"] = $"削除対象 id={id} を受け付けました。※プレビュー版のため、DBからは削除していません。";
-        TempData["MasterMessageKind"] = "warning";
+        try
+        {
+            var affected = _db.Execute_SQL($"DELETE FROM {def.TableName} WHERE id = @id", new { id });
+            TempData["MasterMessage"] = affected > 0 ? "削除しました。" : "対象の行が見つかりませんでした。";
+            TempData["MasterMessageKind"] = affected > 0 ? "success" : "warning";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "マスタ削除でDBエラー: {Table} id={Id}", def.TableName, id);
+            TempData["MasterMessage"] = "削除できませんでした: " + ex.Message;
+            TempData["MasterMessageKind"] = "danger";
+        }
+
         return RedirectToAction(nameof(Edit), new { table });
+    }
+
+    /// <summary>1行INSERT。空欄は 文字列列=NULL / 整数列=DDLの既定値（sort_order=1, color_number=0）にする</summary>
+    private void InsertRow(M_View_MasterDef def, Dictionary<string, string> values)
+    {
+        var param = new DynamicParameters();
+        foreach (var col in def.Columns)
+        {
+            param.Add(col.ColumnName, ToDbValue(col, values[col.ColumnName]));
+        }
+
+        // 列名はレジストリの固定値のみ。created_at / updated_at はDDLの既定値に任せる
+        var columnList = string.Join(", ", def.Columns.Select(c => c.ColumnName));
+        var valueList = string.Join(", ", def.Columns.Select(c => "@" + c.ColumnName));
+        _db.Execute_SQL($"INSERT INTO {def.TableName} ({columnList}) VALUES ({valueList})", param);
+    }
+
+    /// <summary>1行UPDATE（idで特定）。主キーのコード列は画面で編集不可のため変更対象から外す</summary>
+    private int UpdateRow(M_View_MasterDef def, Dictionary<string, string> values, int id)
+    {
+        var targets = def.Columns.Where(c => !def.KeyColumns.Contains(c.ColumnName)).ToList();
+        var param = new DynamicParameters();
+        foreach (var col in targets)
+        {
+            param.Add(col.ColumnName, ToDbValue(col, values[col.ColumnName]));
+        }
+        param.Add("id", id);
+
+        var setList = string.Join(", ", targets.Select(c => $"{c.ColumnName} = @{c.ColumnName}"));
+        return _db.Execute_SQL(
+            $"UPDATE {def.TableName} SET {setList}, updated_at = CURRENT_TIMESTAMP WHERE id = @id", param);
+    }
+
+    /// <summary>画面の入力値をDB格納値へ（空欄: 整数列=既定値・文字列列=NULL。整数はValidate済みなのでParseできる）</summary>
+    private static object? ToDbValue(M_View_MasterColumnDef col, string value)
+    {
+        if (col.IsInt)
+        {
+            return value == "" ? col.IntDefault : int.Parse(value);
+        }
+        return value == "" ? null : value;
     }
 
     /// <summary>一覧を読み込んで画面モデルを組む（DB接続断でも画面は返す）</summary>

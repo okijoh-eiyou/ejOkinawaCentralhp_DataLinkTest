@@ -30,16 +30,17 @@ public class MealPlanController : Controller
     /// 列は disp_json のキーから動的に決まる（全行を上から走査した出現順）
     /// </summary>
     public IActionResult Index(string? date, int mealType = 2, bool hideCodes = true,
-        string? wardCode = null, string? mealCode = null, string? mainDishCode = null)
+        string[]? wardCode = null, string[]? mealCode = null, string[]? mainDishCode = null)
     {
         var page = new M_View_MealPlanJsonPage
         {
             TargetDate = DateOnly.TryParse(date, out var d) ? d : DateOnly.FromDateTime(DateTime.Today),
             MealType = mealType is >= 1 and <= 3 ? mealType : 2,
             HideCodes = hideCodes,
-            WardCode = wardCode ?? "",
-            MealCode = mealCode ?? "",
-            MainDishCode = mainDishCode ?? "",
+            // フィルタはチェックボックスの複数選択（?wardCode=001&wardCode=002 のように繰り返しで届く）
+            WardCodes = (wardCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
+            MealCodes = (mealCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
+            MainDishCodes = (mainDishCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
         };
 
         // DBが落ちていても画面は必ず表示する
@@ -95,19 +96,27 @@ public class MealPlanController : Controller
                 page.Rows.Add(row);
             }
 
-            // フィルタ（disp_json内のコード値と突き合わせ。disp_json未生成の行はフィルタ時は対象外になる）
+            // フィルタの選択肢は「この日付・時間帯の一覧に実際に出ている値」だけにする（2026-09-19 ミーティング）。
+            // 名前も disp_json 内の値をそのまま使う（マスタ参照はしない）。絞り込み前の全行から作ること
+            // （絞り込み後の行から作ると、チェックを広げ直せなくなる）
+            page.WardOptions = BuildOptionsFromRows(page.Rows, "病棟コード", "病棟名");
+            page.MealOptions = BuildOptionsFromRows(page.Rows, "食種コード", "食種名");
+            page.MainDishOptions = BuildOptionsFromRows(page.Rows, "主食コード", "主食名");
+
+            // 別の日付から引き継いだチェック済みコードが当日の一覧に無い場合も、外せるように選択肢へ残す
+            AddMissingChecked(page.WardOptions, page.WardCodes);
+            AddMissingChecked(page.MealOptions, page.MealCodes);
+            AddMissingChecked(page.MainDishOptions, page.MainDishCodes);
+
+            // フィルタ（disp_json内のコード値と突き合わせ。disp_json未生成の行はフィルタ時は対象外になる）。
+            // 同じリスト内の複数チェックは「どれかに一致（OR）」、リスト同士は掛け合わせ（AND）
             if (page.FilterActive)
             {
                 page.Rows = page.Rows.Where(r =>
-                    (page.WardCode == "" || r.Values.GetValueOrDefault("病棟コード") == page.WardCode) &&
-                    (page.MealCode == "" || r.Values.GetValueOrDefault("食種コード") == page.MealCode) &&
-                    (page.MainDishCode == "" || r.Values.GetValueOrDefault("主食コード") == page.MainDishCode)).ToList();
+                    (page.WardCodes.Count == 0 || page.WardCodes.Contains(r.Values.GetValueOrDefault("病棟コード") ?? "")) &&
+                    (page.MealCodes.Count == 0 || page.MealCodes.Contains(r.Values.GetValueOrDefault("食種コード") ?? "")) &&
+                    (page.MainDishCodes.Count == 0 || page.MainDishCodes.Contains(r.Values.GetValueOrDefault("主食コード") ?? ""))).ToList();
             }
-
-            // フィルタのプルダウン選択肢（マスタが空・未作成でも画面は出す）
-            page.WardOptions = LoadOptions("SELECT ward_code AS code, COALESCE(ward_name, '') AS name FROM lw_m_ward ORDER BY ward_code");
-            page.MealOptions = LoadOptions("SELECT meal_code AS code, COALESCE(meal_name, '') AS name FROM lw_m_meal ORDER BY meal_code");
-            page.MainDishOptions = LoadOptions("SELECT main_dish_code AS code, COALESCE(main_dish_name, '') AS name FROM lw_m_main_dish ORDER BY main_dish_code");
 
             page.IsConnected = true;
         }
@@ -138,17 +147,36 @@ public class MealPlanController : Controller
         return value;
     }
 
-    /// <summary>フィルタ用プルダウンの選択肢をマスタから読む。マスタ未作成でも空リストで続行</summary>
-    private List<M_CodeName> LoadOptions(string sql)
+    /// <summary>
+    /// フィルタの選択肢を一覧の行（disp_json由来の値）から作る。
+    /// コードの昇順。同じコードに複数の名前があった場合は最初に見つかった空でない名前を使う
+    /// </summary>
+    private static List<M_CodeName> BuildOptionsFromRows(List<M_View_MealPlanJsonRow> rows, string codeKey, string nameKey)
     {
-        try
+        return rows
+            .Where(r => r.HasJson)
+            .Select(r => new
+            {
+                code = r.Values.GetValueOrDefault(codeKey) ?? "",
+                name = r.Values.GetValueOrDefault(nameKey) ?? "",
+            })
+            .Where(x => x.code != "")
+            .GroupBy(x => x.code)
+            .OrderBy(g => g.Key)
+            .Select(g => new M_CodeName
+            {
+                code = g.Key,
+                name = g.Select(x => x.name).FirstOrDefault(n => n != "") ?? "",
+            })
+            .ToList();
+    }
+
+    /// <summary>チェック済みのコードが選択肢に無ければ末尾に足す（チェックを外せなくなるのを防ぐ）</summary>
+    private static void AddMissingChecked(List<M_CodeName> options, List<string> checkedCodes)
+    {
+        foreach (var code in checkedCodes.Where(c => options.All(o => o.code != c)))
         {
-            return _db.GetDataList_SQL<M_CodeName>(sql);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "フィルタ用マスタの取得に失敗（選択肢なしで続行）: {Sql}", sql);
-            return new List<M_CodeName>();
+            options.Add(new M_CodeName { code = code, name = code });
         }
     }
 }

@@ -122,6 +122,59 @@ body {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
+/* 保存・追加・削除の完了通知（マスタ保守）: 画面上部中央にふわっと出て、約3.5秒で自動的に消える */
+.save-toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  animation: save-toast-fade 3.5s ease forwards;
+}
+
+@keyframes save-toast-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -1rem);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* フィルタのチェックボックスリスト（病棟・食種・主食）: 約10行ぶんの高さで縦スクロール */
+.filter-check-list {
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: 0.25rem 0.75rem;
+}
+
+/* マスタ保守の一覧: 列幅を内容に合わせて詰める（テーブルを横いっぱいに間延びさせない） */
+.fit-table {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.fit-table table {
+  width: auto;
+}
+
+.fit-table th,
+.fit-table td {
+  white-space: nowrap;
+}
+
 /* 食事一覧の主要ボタン（検索・患者検索）: 通常ボタンより少し大きめ＋太字 */
 .btn-main-action {
   font-weight: bold;
