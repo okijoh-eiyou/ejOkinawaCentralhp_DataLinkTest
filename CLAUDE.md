@@ -10,8 +10,9 @@
 
 - 屋宜原病院版（WPF: `C:\git-file_eiyou\smax_Confirmation_of_received_telegram`）の載せ替え版
 - 本番はUbuntu VM上のDockerで稼働予定。栄養課PCはブラウザでアクセスする
-- データを閲覧するのみ。業務テーブルへのINSERT/UPDATE/DELETEは実装しない
-  （※将来「マスタ保守」機能＝マスタ更新画面を作る場合は、このルールの改定を上司と合意してから着手すること。2026-07-31記録）
+- 業務テーブル（`lw_order_log`・展開8テーブル・`lw_meal_plan`）は閲覧のみ。INSERT/UPDATE/DELETEは実装しない
+- 例外: マスタ保守画面（`MasterController`）だけは `lw_m_*` マスタ8テーブルへの追加・変更・削除を行う
+  （2026-09-19 ミーティングで書き込みを有効化。対象は `M_View_MasterRegistry`(クラス) の固定定義のみ。2026-07-31の読み取り専用ルールを改定）
 
 ## 構成
 

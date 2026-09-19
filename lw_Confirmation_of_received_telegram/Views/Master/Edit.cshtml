@@ -1,10 +1,6 @@
 @model lw_Confirmation_of_received_telegram.Models.M_View_MasterEditPage
 @{
     ViewData["Title"] = Model.Def.DisplayName;
-    var editing = Model.Adding || Model.EditId != null;
-
-    // 編集行・新規追加行の入力欄の表示値（編集開始時は現在値、検証エラー時は入力値）
-    string Val(string columnName) => Model.EditValues.GetValueOrDefault(columnName, "");
 }
 
 <div class="d-flex align-items-center gap-2 mb-2 mt-2">
@@ -13,18 +9,28 @@
     <a class="btn btn-outline-secondary ms-auto" asp-action="Index">マスタ一覧へ戻る</a>
 </div>
 
-<div class="alert alert-warning py-1 mb-2">
-    <strong>プレビュー版</strong>：保存・削除はまだDBに書き込みません（入力チェック・コード重複チェックのみ動きます）。
-</div>
-
 @if (Model.Messages.Count > 0)
 {
-    <div class="alert alert-@Model.MessageKind py-1 mb-2">
-        @foreach (var message in Model.Messages)
-        {
-            <div>@message</div>
-        }
-    </div>
+    if (Model.MessageKind == "danger")
+    {
+        @* エラーは読み逃すと困るので消えない通常表示のまま *@
+        <div class="alert alert-danger py-1 mb-2">
+            @foreach (var message in Model.Messages)
+            {
+                <div>@message</div>
+            }
+        </div>
+    }
+    else
+    {
+        @* 保存・追加・削除の完了通知は、上からふわっと出て数秒で自動的に消えるトースト表示（2026-09-19） *@
+        <div class="alert alert-@Model.MessageKind save-toast shadow py-2 px-4 mb-0">
+            @foreach (var message in Model.Messages)
+            {
+                <div>@message</div>
+            }
+        </div>
+    }
 }
 
 @if (!Model.IsConnected)
@@ -36,112 +42,125 @@
 }
 else
 {
-    @* 保存フォームの本体。<form> は <tr> をまたげないため空フォームを置き、
-       編集行の入力欄は form="masterSaveForm" 属性でここに紐づける *@
-    <form id="masterSaveForm" method="post" asp-action="Save" asp-route-table="@Model.Def.Slug"></form>
+    <p class="mb-2">
+        <button type="button" class="btn btn-success" onclick="openEditPanel('', {}, true)">新規追加</button>
+    </p>
 
-    @if (!editing)
-    {
-        <p class="mb-2">
-            <a class="btn btn-success btn-sm" asp-action="Edit"
-               asp-route-table="@Model.Def.Slug" asp-route-adding="true">新規追加</a>
-        </p>
-    }
-
-    <div class="table-responsive border sticky-header-scroll">
+    @* fit-table: 列幅を内容に合わせて詰める（横いっぱいに間延びさせない） *@
+    <div class="table-responsive border sticky-header-scroll fit-table">
         <table class="table table-bordered table-striped table-sm align-middle mb-0">
             <thead>
                 <tr>
+                    @* 操作列は一番左（2026-09-19 ミーティング） *@
+                    <th>操作</th>
                     @foreach (var col in Model.Def.Columns)
                     {
                         <th>@col.Label@(col.Required ? " *" : "")</th>
                     }
-                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
-                @if (Model.Adding)
-                {
-                    <tr class="table-warning">
-                        @foreach (var col in Model.Def.Columns)
-                        {
-                            <td>
-                                @if (col.IsInt)
-                                {
-                                    <input type="number" class="form-control form-control-sm" style="min-width: 5em;"
-                                           name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
-                                }
-                                else
-                                {
-                                    <input type="text" class="form-control form-control-sm" style="min-width: 6em;"
-                                           maxlength="@col.MaxLength"
-                                           name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
-                                }
-                            </td>
-                        }
-                        <td class="text-nowrap">
-                            <button type="submit" class="btn btn-sm btn-primary" form="masterSaveForm">保存</button>
-                            <a class="btn btn-sm btn-outline-secondary" asp-action="Edit"
-                               asp-route-table="@Model.Def.Slug">取消</a>
-                        </td>
-                    </tr>
-                }
                 @foreach (var r in Model.Rows)
                 {
-                    @if (Model.EditId == r.Id)
-                    {
-                        <tr class="table-warning">
-                            @foreach (var col in Model.Def.Columns)
-                            {
-                                <td>
-                                    @if (col.IsInt)
-                                    {
-                                        <input type="number" class="form-control form-control-sm" style="min-width: 5em;"
-                                               name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
-                                    }
-                                    else
-                                    {
-                                        <input type="text" class="form-control form-control-sm" style="min-width: 6em;"
-                                               maxlength="@col.MaxLength"
-                                               name="values[@(col.ColumnName)]" value="@Val(col.ColumnName)" form="masterSaveForm" />
-                                    }
-                                </td>
-                            }
-                            <td class="text-nowrap">
-                                <input type="hidden" name="id" value="@r.Id" form="masterSaveForm" />
-                                <button type="submit" class="btn btn-sm btn-primary" form="masterSaveForm">保存</button>
-                                <a class="btn btn-sm btn-outline-secondary" asp-action="Edit"
-                                   asp-route-table="@Model.Def.Slug">取消</a>
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            @foreach (var col in Model.Def.Columns)
-                            {
-                                <td>@r.Values.GetValueOrDefault(col.ColumnName, "")</td>
-                            }
-                            <td class="text-nowrap">
-                                <a class="btn btn-sm btn-outline-primary" asp-action="Edit"
-                                   asp-route-table="@Model.Def.Slug" asp-route-editId="@r.Id">編集</a>
-                                @* 削除フォームは <td> の中で完結するのでそのまま置ける *@
-                                <form method="post" asp-action="Delete" asp-route-table="@Model.Def.Slug" class="d-inline"
-                                      onsubmit="return confirm('この行を削除しますか？（プレビュー版のため実際には削除されません）');">
-                                    <input type="hidden" name="id" value="@r.Id" />
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
+                    <tr>
+                        <td class="text-nowrap">
+                            @* 編集は右端からスライドして出るパネル（オフキャンバス）で行う。画面遷移なし。
+                               行の値は data-values（JSON）でボタンに持たせる *@
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    data-id="@r.Id"
+                                    data-values="@System.Text.Json.JsonSerializer.Serialize(r.Values)"
+                                    onclick="openEditPanel(this.dataset.id, JSON.parse(this.dataset.values), false)">編集</button>
+                            @* 削除ボタンは非表示（2026-09-19 ミーティング）。復活時は下のコメントを外す
+                               （コントローラの Delete アクションは残してある）
+                            <form method="post" asp-action="Delete" asp-route-table="@Model.Def.Slug" class="d-inline"
+                                  onsubmit="return confirm('この行を削除しますか？（プレビュー版のため実際には削除されません）');">
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                            </form>
+                            *@
+                        </td>
+                        @foreach (var col in Model.Def.Columns)
+                        {
+                            <td>@r.Values.GetValueOrDefault(col.ColumnName, "")</td>
+                        }
+                    </tr>
                 }
             </tbody>
         </table>
     </div>
     <p class="text-muted small mt-1">@Model.Rows.Count 件（* は必須項目）</p>
 
-    @if (Model.Rows.Count == 0 && !Model.Adding)
+    @if (Model.Rows.Count == 0)
     {
         <p>データがありません。「新規追加」から登録できます。</p>
     }
+}
+
+@* 右端からスライドして出てくる編集パネル（Bootstrap オフキャンバス）。
+   一度「左から」にしたが、テーブル（左寄せ）と重なるため右に戻した（2026-09-19）。
+   主キー（コード）列は既存行の編集では変更不可（readonly）、新規追加のときだけ入力できる *@
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editPanel" aria-labelledby="editPanelLabel">
+    <div class="offcanvas-header border-bottom py-2">
+        <h5 class="offcanvas-title" id="editPanelLabel">編集</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="閉じる"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form method="post" asp-action="Save" asp-route-table="@Model.Def.Slug" id="editForm">
+            <input type="hidden" name="id" id="editRowId" />
+            @foreach (var col in Model.Def.Columns)
+            {
+                var isKey = Model.Def.KeyColumns.Contains(col.ColumnName);
+                <div class="mb-3">
+                    <label class="form-label mb-1" for="edit_@(col.ColumnName)">@col.Label@(col.Required ? " *" : "")</label>
+                    @if (col.IsInt)
+                    {
+                        <input type="number" class="form-control" id="edit_@(col.ColumnName)"
+                               name="values[@(col.ColumnName)]" data-key="@isKey.ToString().ToLower()" />
+                    }
+                    else
+                    {
+                        <input type="text" class="form-control" maxlength="@col.MaxLength" id="edit_@(col.ColumnName)"
+                               name="values[@(col.ColumnName)]" data-key="@isKey.ToString().ToLower()" />
+                    }
+                </div>
+            }
+            @* 下部の操作: 削除=左端（既存行の編集時のみ表示）・保存=右端（2026-09-19 ミーティング） *@
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit" id="deleteButton" class="btn btn-outline-danger"
+                        formaction="@Url.Action("Delete", "Master", new { table = Model.Def.Slug })"
+                        onclick="return confirm('この行を削除します。よろしいですか？');">削除</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 「編集」「新規追加」で右端の編集パネルを開く（画面遷移なし）。
+    // 既存行の編集では主キー（コード）列を readonly＋灰色にする。新規追加では入力できる
+    function openEditPanel(id, values, isNew) {
+        document.getElementById('editRowId').value = id || '';
+        document.getElementById('editPanelLabel').textContent = isNew ? '新規追加' : '編集';
+        document.getElementById('deleteButton').hidden = isNew;   // 新規追加では削除ボタンを出さない
+        document.querySelectorAll('#editForm [name^="values["]').forEach(function (input) {
+            var col = input.name.slice('values['.length, -1);
+            input.value = values[col] || '';
+            var lock = !isNew && input.dataset.key === 'true';
+            input.readOnly = lock;
+            input.classList.toggle('bg-light', lock);
+        });
+        bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('editPanel')).show();
+    }
+</script>
+
+@if (Model.Messages.Count > 0 && (Model.Adding || Model.EditId != null))
+{
+    <script>
+        // 入力チェックエラー後: 入力値を戻した状態で編集パネルを開き直す
+        window.addEventListener('DOMContentLoaded', function () {
+            openEditPanel('@(Model.EditId?.ToString() ?? "")',
+                @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.EditValues)),
+                @(Model.Adding ? "true" : "false"));
+        });
+    </script>
 }

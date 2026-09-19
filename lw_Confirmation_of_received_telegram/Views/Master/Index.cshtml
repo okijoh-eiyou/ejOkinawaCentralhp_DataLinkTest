@@ -9,11 +9,6 @@
     <button type="button" class="btn btn-outline-secondary ms-auto" onclick="closeMasterWindow()">閉じる</button>
 </div>
 
-<div class="alert alert-warning py-1 mb-2">
-    <strong>プレビュー版</strong>：画面と入力チェックのみ動きます。保存・削除はまだDBに書き込みません
-    （読み取り専用ルールの改定を上司と合意後に有効化します）。
-</div>
-
 @* マスタ名のみのボタンを優先順（★禁止コメント→★その他コメント→〇食種→残りはDDL番号順）に縦へ並べる *@
 <div class="d-grid gap-2" style="max-width: 20rem;">
     @foreach (var def in Model)

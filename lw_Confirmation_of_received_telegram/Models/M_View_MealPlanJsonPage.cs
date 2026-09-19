@@ -21,19 +21,21 @@ namespace lw_Confirmation_of_received_telegram.Models
         /// <summary>コード系の列（列名に「コード」を含むもの）を非表示にするか（既定: 非表示＝本番の見た目）</summary>
         public bool HideCodes { get; set; } = true;
 
-        // ---- フィルタ（フィルタ表示ボタンで開閉。空文字=絞り込みなし） ----
+        // ---- フィルタ（フィルタ表示ボタンで開閉。チェックなし=絞り込みなし） ----
+        // 各リストはチェックボックスの複数選択（2026-09-19）。
+        // 同じリスト内の複数チェックは「どれかに一致（OR）」、リスト同士は掛け合わせ（AND）
 
-        /// <summary>病棟フィルタ（選択された病棟コード）</summary>
-        public string WardCode { get; set; } = "";
+        /// <summary>病棟フィルタ（チェックされた病棟コード）</summary>
+        public List<string> WardCodes { get; set; } = new();
 
-        /// <summary>食種フィルタ（選択された食種コード）</summary>
-        public string MealCode { get; set; } = "";
+        /// <summary>食種フィルタ（チェックされた食種コード）</summary>
+        public List<string> MealCodes { get; set; } = new();
 
-        /// <summary>主食フィルタ（選択された主食コード）</summary>
-        public string MainDishCode { get; set; } = "";
+        /// <summary>主食フィルタ（チェックされた主食コード）</summary>
+        public List<string> MainDishCodes { get; set; } = new();
 
-        /// <summary>いずれかのフィルタが有効か（フィルタ行を開いた状態で表示する判定にも使う）</summary>
-        public bool FilterActive => WardCode != "" || MealCode != "" || MainDishCode != "";
+        /// <summary>いずれかのフィルタが有効か（フィルタ表示ボタンの青塗り判定にも使う）</summary>
+        public bool FilterActive => WardCodes.Count > 0 || MealCodes.Count > 0 || MainDishCodes.Count > 0;
 
         /// <summary>病棟プルダウンの選択肢（lw_m_ward から）</summary>
         public List<M_CodeName> WardOptions { get; set; } = new();

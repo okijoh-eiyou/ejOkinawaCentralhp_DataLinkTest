@@ -35,13 +35,14 @@ namespace lw_Confirmation_of_received_telegram.Models
     /// <summary>マスタ保守: 編集対象1列分の定義</summary>
     public class M_View_MasterColumnDef
     {
-        public M_View_MasterColumnDef(string columnName, string label, int maxLength = 0, bool isInt = false, bool required = false)
+        public M_View_MasterColumnDef(string columnName, string label, int maxLength = 0, bool isInt = false, bool required = false, int intDefault = 0)
         {
             ColumnName = columnName;
             Label = label;
             MaxLength = maxLength;
             IsInt = isInt;
             Required = required;
+            IntDefault = intDefault;
         }
 
         /// <summary>物理列名</summary>
@@ -58,6 +59,9 @@ namespace lw_Confirmation_of_received_telegram.Models
 
         /// <summary>必須入力か（DDLの NOT NULL コード列）</summary>
         public bool Required { get; }
+
+        /// <summary>整数列の未入力時に入れる値（DDLの DEFAULT に合わせる: sort_order=1, color_number=0）</summary>
+        public int IntDefault { get; }
     }
 
     /// <summary>
@@ -76,7 +80,7 @@ namespace lw_Confirmation_of_received_telegram.Models
                     new("contra_code", "禁止コメントコード", 4, required: true),
                     new("contra_name", "禁止コメント名", 50),
                     new("category_name", "分類名", 50),
-                    new("sort_order", "並び順", isInt: true),
+                    new("sort_order", "並び順", isInt: true, intDefault: 1),
                     new("color_number", "色番号", isInt: true),
                 },
                 KeyColumns = new() { "contra_code" },
@@ -90,7 +94,7 @@ namespace lw_Confirmation_of_received_telegram.Models
                     new("other_comment_code", "その他コメントコード", 4, required: true),
                     new("other_comment_name", "その他コメント名", 50),
                     new("category_name", "分類名", 50),
-                    new("sort_order", "並び順", isInt: true),
+                    new("sort_order", "並び順", isInt: true, intDefault: 1),
                     new("color_number", "色番号", isInt: true),
                 },
                 KeyColumns = new() { "other_comment_code" },
@@ -105,7 +109,7 @@ namespace lw_Confirmation_of_received_telegram.Models
                     new("meal_name", "食種名", 50),
                     new("category_name", "分類名", 50),
                     new("diet_group", "食種区分", 50),
-                    new("sort_order", "並び順", isInt: true),
+                    new("sort_order", "並び順", isInt: true, intDefault: 1),
                     new("color_number", "色番号", isInt: true),
                 },
                 KeyColumns = new() { "meal_code" },
@@ -156,7 +160,7 @@ namespace lw_Confirmation_of_received_telegram.Models
                     new("main_dish_code", "主食コード", 2, required: true),
                     new("main_dish_name", "主食名", 50),
                     new("category_name", "分類名", 50),
-                    new("sort_order", "並び順", isInt: true),
+                    new("sort_order", "並び順", isInt: true, intDefault: 1),
                     new("color_number", "色番号", isInt: true),
                 },
                 KeyColumns = new() { "main_dish_code" },
