@@ -75,13 +75,12 @@
            asp-route-wardCode="@Model.WardCode" asp-route-mealCode="@Model.MealCode"
            asp-route-mainDishCode="@Model.MainDishCode">&gt;</a>
     </div>
-    @* 機能ボタン3つは連結（btn-group）。「< 今日 >」とは関連が薄いので大きく距離を空ける（ms-5 = 3rem） *@
+    @* 機能ボタンは連結（btn-group）。「< 今日 >」とは関連が薄いので大きく距離を空ける（ms-5 = 3rem）。
+       「帳票出力」はWeb版では不要になったため削除済み（2026-09-19 ミーティング。復活対象外） *@
     <div class="col-auto btn-group ms-5">
         @* フィルタは小ウィンドウ（モーダル）で開く。フィルタが効いている間は青塗りで明示 *@
         <button type="button" class="btn @(Model.FilterActive ? "btn-primary" : "btn-outline-primary")"
                 data-bs-toggle="modal" data-bs-target="#filterModal">フィルタ表示</button>
-        @* 帳票出力は未実装（押しても何も起きない）。配色はマスタ保守と揃える *@
-        <button type="button" class="btn btn-outline-primary">帳票出力</button>
         @* マスタ保守はプレビュー版（画面のみ。保存はまだDBに書き込まない）。別タブの子画面方式 *@
         <a class="btn btn-outline-primary" asp-controller="Master" asp-action="Index"
            target="_blank" rel="opener">マスタ保守</a>
@@ -216,10 +215,20 @@ else if (Model.Rows.Count == 0)
 }
 else
 {
-    @* コード系（列名に「コード」を含む）はチェックで非表示にできる *@
+    @* 「コード系を非表示」の対象: 列名に「コード」を含む列＋開始日・理由区分・開始時区分（2026-09-19 ミーティング）。
+       理由区分_text は名前解決済みの表示用なので対象外（完全一致で判定する） *@
+    bool IsCodeLike(string col) => col.Contains("コード") || col == "開始日" || col == "理由区分" || col == "開始時区分";
+
+    @* コメント内容の列は一番右に置く（2026-09-19 ミーティング） *@
+    var orderedColumns = Model.Columns.ToList();
+    if (orderedColumns.Remove("コメント内容"))
+    {
+        orderedColumns.Add("コメント内容");
+    }
+
     var visibleColumns = Model.HideCodes
-        ? Model.Columns.Where(c => !c.Contains("コード")).ToList()
-        : Model.Columns;
+        ? orderedColumns.Where(c => !IsCodeLike(c)).ToList()
+        : orderedColumns;
 
     @* コメント系（列名に「コメント」を含む）と食種名は全角10文字幅で折り返す *@
     string CellClass(string col) => col.Contains("コメント") || col == "食種名" ? "col-comment" : "";
@@ -229,11 +238,11 @@ else
             <thead>
                 <tr>
                     <th>履歴</th>
-                    @* 列ラベルは disp_json のキーそのまま（jsonbが返す順）。
-                       コード系（「コード系を非表示」チェックOFFで出る列）のラベルは赤にする *@
+                    @* 列ラベルは disp_json のキーそのまま（jsonbが返す順。ただしコメント内容だけ一番右）。
+                       「コード系を非表示」の対象列は、表示したときラベルを赤にする *@
                     @foreach (var col in visibleColumns)
                     {
-                        <th class="@CellClass(col) @(col.Contains("コード") ? "col-code" : "")">@col</th>
+                        <th class="@CellClass(col) @(IsCodeLike(col) ? "col-code" : "")">@col</th>
                     }
                 </tr>
             </thead>
@@ -248,27 +257,12 @@ else
                                asp-route-patientNumber="@r.PatientNumber" asp-route-showInactive="true"
                                target="_blank" rel="opener">履歴</a>
                         </td>
+                        @* コメント系の「,」区切り3色塗り分けは廃止して黒に戻した（2026-09-19 ミーティング） *@
                         @if (r.HasJson)
                         {
                             foreach (var col in visibleColumns)
                             {
-                                var cellValue = r.Values.GetValueOrDefault(col, "");
-                                <td class="@CellClass(col)">
-                                    @if (col.Contains("コメント内容") && cellValue.Contains(','))
-                                    {
-                                        @* 「,」区切りの複数コメントは 1つ目=赤 2つ目=オレンジ 3つ目=緑（4つ目以降は繰り返し）。
-                                           フリーコメントは自由文で「,」が混ざり得るため対象外（コメント内容系の列のみ） *@
-                                        var parts = cellValue.Split(',');
-                                        for (var i = 0; i < parts.Length; i++)
-                                        {
-                                            <span class="csv-item-@(i % 3 + 1)">@parts[i]</span>@(i < parts.Length - 1 ? "," : "")
-                                        }
-                                    }
-                                    else
-                                    {
-                                        @cellValue
-                                    }
-                                </td>
+                                <td class="@CellClass(col)">@(r.Values.GetValueOrDefault(col, ""))</td>
                             }
                         }
                         else

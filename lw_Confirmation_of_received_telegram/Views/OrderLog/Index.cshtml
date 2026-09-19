@@ -45,13 +45,13 @@
            直接URLで開かれていて閉じられない場合は食事一覧へ遷移する *@
         <button type="button" class="btn btn-outline-secondary fw-bold" onclick="closePatientSearch()">閉じる</button>
     </div>
-    @if (Model.Searched && Model.IsConnected)
-    {
-        <div class="col-auto">
-            <span>検索件数: <strong>@Model.OrderLogs.Count</strong> 件</span>
-        </div>
-    }
 </form>
+
+@* 検索件数は患者番号入力欄の真下に出す（2026-09-19 ミーティング。以前は右端） *@
+@if (Model.Searched && Model.IsConnected)
+{
+    <p class="mb-2">検索件数: <strong>@Model.OrderLogs.Count</strong> 件</p>
+}
 
 @if (!Model.Searched)
 {

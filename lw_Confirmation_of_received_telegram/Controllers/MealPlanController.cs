@@ -75,8 +75,14 @@ public class MealPlanController : Controller
                             _ => prop.Value.ToString(),
                         };
 
-                        // 患者番号は表示上だけ先頭ゼロを外す（検索用の原値は row.PatientNumber に保持）
-                        row.Values[prop.Name] = prop.Name == "患者番号" ? TrimLeadingZeros(value) : value;
+                        // 表示用の整形: 患者番号は先頭ゼロを外す（検索用の原値は row.PatientNumber に保持）、
+                        // 開始日は yyyyMMdd → yyyy/MM/dd(曜) にする（2026-09-19 ミーティング）
+                        row.Values[prop.Name] = prop.Name switch
+                        {
+                            "患者番号" => TrimLeadingZeros(value),
+                            "開始日" => FormatStartDate(value),
+                            _ => value,
+                        };
 
                         // 列ラベルは初出順（＝jsonbが返す順）に採用
                         if (!page.Columns.Contains(prop.Name))
@@ -120,6 +126,16 @@ public class MealPlanController : Controller
     {
         var trimmed = value.TrimStart('0');
         return trimmed == "" && value != "" ? "0" : trimmed;
+    }
+
+    /// <summary>開始日（yyyyMMdd）を「yyyy/MM/dd(曜)」にする（例: 20260919 → 2026/09/19(土)）。形式外の値はそのまま返す</summary>
+    private static string FormatStartDate(string value)
+    {
+        if (DateOnly.TryParseExact(value, "yyyyMMdd", out var date))
+        {
+            return $"{date:yyyy/MM/dd}({"日月火水木金土"[(int)date.DayOfWeek]})";
+        }
+        return value;
     }
 
     /// <summary>フィルタ用プルダウンの選択肢をマスタから読む。マスタ未作成でも空リストで続行</summary>
