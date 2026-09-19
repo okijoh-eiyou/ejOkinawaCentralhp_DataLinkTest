@@ -26,9 +26,19 @@ public class OrderLogController : Controller
     /// </summary>
     public IActionResult Index(string? patientNumber, bool showInactive = false, int? selectedId = null)
     {
+        var inputNumber = (patientNumber ?? "").Trim();
+
+        // DBの patient_number はゼロ埋め10桁（例: 0009900788）。画面では先頭ゼロなしで見えているため、
+        // 数字だけの10桁未満の入力は先頭ゼロ埋めして完全一致で検索する（LIKEは遅いので使わない。2026-09-19）。
+        // 文字列のまま扱う（患者番号をintにしない設計ルール）
+        if (inputNumber.Length is > 0 and < 10 && inputNumber.All(char.IsAsciiDigit))
+        {
+            inputNumber = inputNumber.PadLeft(10, '0');
+        }
+
         var search = new M_View_OrderSearch
         {
-            PatientNumber = (patientNumber ?? "").Trim(),
+            PatientNumber = inputNumber,
             ShowInactive = showInactive,
         };
 
