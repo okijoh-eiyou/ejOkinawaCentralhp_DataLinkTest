@@ -433,3 +433,5 @@ FodyWeavers.xsd
 
 # ASP.NET Core - 接続情報はコミットしない
 appsettings.Development.json
+# 本番用の接続情報も同様にコミット禁止（雛形は appsettings.Production.json.example を参照）
+appsettings.Production.json

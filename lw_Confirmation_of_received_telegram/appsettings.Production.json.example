@@ -1,0 +1,9 @@
+{
+  // 本番（VM）用の接続情報の雛形。
+  // 使い方: このファイルを「appsettings.Production.json」という名前でコピーし、
+  // <　> の部分を実際の値に書き換えて、サーバー上の実行ファイルと同じフォルダに置く。
+  // 実値を書いたファイルはGitにコミットしないこと（.gitignore対象。CLAUDE.mdのルール）
+  "ConnectionStrings": {
+    "Default": "Host=<DBサーバーのIPまたはlocalhost>;Port=5432;Database=<DB名>;Username=<ユーザー名>;Password=<パスワード>"
+  }
+}

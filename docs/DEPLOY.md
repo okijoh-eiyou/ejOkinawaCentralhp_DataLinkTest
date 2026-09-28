@@ -67,6 +67,29 @@
 1. ソースを `tar`＋`scp` で転送 → サーバーで `docker build -t lw-denbun-check .`
 2. `docker rm -f lw-denbun-check` → `docker run -d ...` で差し替え
 
+## 他の作業者にVMへ設置してもらうときのDB接続情報の渡し方（2026-09-19追記）
+
+リポジトリには接続情報が**入っていない**（`appsettings.Development.json` はGit管理外）ため、
+クローンして発行しただけではDBに繋がらない。以下のどちらかで接続情報をサーバー側に置く。
+
+**方法A（推奨・簡単）: `appsettings.Production.json` を実行フォルダに置く**
+
+1. リポジトリ内の雛形 `lw_Confirmation_of_received_telegram/appsettings.Production.json.example` をコピーし、
+   `appsettings.Production.json` という名前で実値（Host/Database/Username/Password）を記入する
+2. このファイルを**リポジトリ経由ではなく別ルート**（USB・チャット等）で作業者に渡す
+   （実値入りファイルはコミット禁止。`.gitignore` にも登録済みなので誤コミットは防がれる）
+3. 作業者はサーバー上で、発行した実行ファイル（`lw_Confirmation_of_received_telegram` バイナリ）と
+   **同じフォルダ**にこのファイルを置いてサービスを再起動する
+4. 発行の成果物にこのファイルは含まれないため、**アプリを更新（差し替え）しても消えない**
+
+※ 発行版は既定で環境が Production になるため、`appsettings.Production.json` は自動で読み込まれる。
+　 `appsettings.Development.json` は Development 環境でしか読まれない（コピーしても無駄）ので注意。
+
+**方法B（.96 VMで使っていた方式）: 環境変数ファイル＋systemd**
+
+- サーバー上に `~/.lw-denbun.env` を作り `ConnectionStrings__Default=Host=...;Database=...;...` を記述、
+  systemd ユニットの `EnvironmentFile=` で読み込ませる（上記「切替手順」参照）
+
 ## 経緯メモ
 
 - 2026-07-27: SSH開通（鍵認証設定）、Dockerfile作成、ソース転送
