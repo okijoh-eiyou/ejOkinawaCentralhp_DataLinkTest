@@ -98,6 +98,19 @@ public class MealPlanController : Controller
                 page.Rows.Add(row);
             }
 
+            // 並び順（2026-10-02 依頼）: ①変更列に記載がある行を先頭 ②病棟コード ③食種コード ④主食コード。
+            // コードが空の行（disp_json未生成など）は各グループの後ろ。同順位は受信順（plan_id）のまま（OrderByは安定ソート）
+            string SortKey(M_View_MealPlanJsonRow r, string key) => r.Values.GetValueOrDefault(key) ?? "";
+            page.Rows = page.Rows
+                .OrderByDescending(r => SortKey(r, "変更") != "")
+                .ThenBy(r => SortKey(r, "病棟コード") == "")
+                .ThenBy(r => SortKey(r, "病棟コード"), StringComparer.Ordinal)
+                .ThenBy(r => SortKey(r, "食種コード") == "")
+                .ThenBy(r => SortKey(r, "食種コード"), StringComparer.Ordinal)
+                .ThenBy(r => SortKey(r, "主食コード") == "")
+                .ThenBy(r => SortKey(r, "主食コード"), StringComparer.Ordinal)
+                .ToList();
+
             // フィルタの選択肢は「この日付・時間帯の一覧に実際に出ている値」だけにする（2026-09-19 ミーティング）。
             // 名前も disp_json 内の値をそのまま使う（マスタ参照はしない）。絞り込み前の全行から作ること
             // （絞り込み後の行から作ると、チェックを広げ直せなくなる）
