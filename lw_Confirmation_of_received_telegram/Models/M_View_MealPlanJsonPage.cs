@@ -34,8 +34,15 @@ namespace lw_Confirmation_of_received_telegram.Models
         /// <summary>主食フィルタ（チェックされた主食コード）</summary>
         public List<string> MainDishCodes { get; set; } = new();
 
+        /// <summary>
+        /// その他コメントフィルタ（チェックされた値そのもの。2026-10-02追加）。
+        /// その他コメントはコード列が無く「きざみ,並食」のようなカンマ区切りの複数値のため、
+        /// 分解した個々の値で突き合わせる（行がチェック値をどれか含めばヒット）
+        /// </summary>
+        public List<string> OtherComments { get; set; } = new();
+
         /// <summary>いずれかのフィルタが有効か（フィルタ表示ボタンの青塗り判定にも使う）</summary>
-        public bool FilterActive => WardCodes.Count > 0 || MealCodes.Count > 0 || MainDishCodes.Count > 0;
+        public bool FilterActive => WardCodes.Count > 0 || MealCodes.Count > 0 || MainDishCodes.Count > 0 || OtherComments.Count > 0;
 
         /// <summary>病棟プルダウンの選択肢（lw_m_ward から）</summary>
         public List<M_CodeName> WardOptions { get; set; } = new();
@@ -45,6 +52,9 @@ namespace lw_Confirmation_of_received_telegram.Models
 
         /// <summary>主食プルダウンの選択肢（lw_m_main_dish から）</summary>
         public List<M_CodeName> MainDishOptions { get; set; } = new();
+
+        /// <summary>その他コメントの選択肢（一覧の「,」区切り値を分解した個々の値。code=name=値そのもの）</summary>
+        public List<M_CodeName> OtherCommentOptions { get; set; } = new();
 
         /// <summary>データ取得に成功したか</summary>
         public bool IsConnected { get; set; }

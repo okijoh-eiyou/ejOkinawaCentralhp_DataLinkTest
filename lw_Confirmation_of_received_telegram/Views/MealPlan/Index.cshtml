@@ -62,11 +62,11 @@
         @* 前日/今日/翌日の移動でも、食事区分・コード非表示・フィルタの選択は引き継ぐ。
            フィルタは複数値（配列）のため asp-route ではなく Url.Action で組み立てる *@
         <a class="btn btn-outline-secondary"
-           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">&lt;</a>
+           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(-1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes, otherComment = Model.OtherComments })">&lt;</a>
         <a class="btn btn-outline-secondary"
-           href="@Url.Action("Index", new { mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">今日</a>
+           href="@Url.Action("Index", new { mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes, otherComment = Model.OtherComments })">今日</a>
         <a class="btn btn-outline-secondary"
-           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes })">&gt;</a>
+           href="@Url.Action("Index", new { date = Model.TargetDate.AddDays(1).ToString("yyyy-MM-dd"), mealType = Model.MealType, hideCodes = Model.HideCodes, wardCode = Model.WardCodes, mealCode = Model.MealCodes, mainDishCode = Model.MainDishCodes, otherComment = Model.OtherComments })">&gt;</a>
     </div>
     @* 機能ボタンは連結（btn-group）。「< 今日 >」とは関連が薄いので大きく距離を空ける（ms-5 = 3rem）。
        「帳票出力」はWeb版では不要になったため削除済み（2026-09-19 ミーティング。復活対象外） *@
@@ -112,18 +112,18 @@
    select は form 属性でメインのGETフォーム（mealSearchForm）に紐づくため、
    モーダルを閉じていても選択値は「検索」やナビの送信に乗る *@
 <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 46rem;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 58rem;">
         <div class="modal-content">
             <div class="modal-header py-2">
                 <h5 class="modal-title fs-6" id="filterModalLabel">表示フィルタ</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
             </div>
             <div class="modal-body">
-                @* 病棟・食種・主食は横並びのチェックボックスリスト（2026-09-19 複数選択式に変更）。
+                @* 病棟・食種・主食・その他コメントは横並びのチェックボックスリスト（複数選択式）。
                    同じリスト内の複数チェックは「どれかに一致（OR）」、リスト同士は掛け合わせ（AND）。
                    チェックなし＝そのリストは絞り込まない（旧「（すべて）」相当） *@
                 <div class="row g-3">
-                <div class="col-4">
+                <div class="col-3">
                     <label class="form-label mb-1">病棟</label>
                     <div class="border rounded filter-check-list">
                         @foreach (var o in Model.WardOptions)
@@ -137,7 +137,7 @@
                         }
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-3">
                     <label class="form-label mb-1">食種</label>
                     <div class="border rounded filter-check-list">
                         @foreach (var o in Model.MealOptions)
@@ -151,7 +151,7 @@
                         }
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-3">
                     <label class="form-label mb-1">主食</label>
                     <div class="border rounded filter-check-list">
                         @foreach (var o in Model.MainDishOptions)
@@ -161,6 +161,23 @@
                                        id="mainDish_@(o.code)" form="mealSearchForm"
                                        checked="@(Model.MainDishCodes.Contains(o.code) ? "checked" : null)" />
                                 <label class="form-check-label" for="mainDish_@(o.code)">@(o.name != "" ? o.name : o.code)</label>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-3">
+                    <label class="form-label mb-1">その他コメント</label>
+                    @* 値は「きざみ,並食」のようなカンマ区切りを分解した個々の値（コード列なし・値そのものを送る）。
+                       値に空白等が入り得るため id は連番にする *@
+                    <div class="border rounded filter-check-list">
+                        @for (var i = 0; i < Model.OtherCommentOptions.Count; i++)
+                        {
+                            var o = Model.OtherCommentOptions[i];
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="otherComment" value="@o.code"
+                                       id="otherComment_@(i)" form="mealSearchForm"
+                                       checked="@(Model.OtherComments.Contains(o.code) ? "checked" : null)" />
+                                <label class="form-check-label" for="otherComment_@(i)">@o.name</label>
                             </div>
                         }
                     </div>
