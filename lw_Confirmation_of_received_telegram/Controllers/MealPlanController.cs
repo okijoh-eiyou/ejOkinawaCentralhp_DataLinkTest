@@ -30,7 +30,8 @@ public class MealPlanController : Controller
     /// 列は disp_json のキーから動的に決まる（全行を上から走査した出現順）
     /// </summary>
     public IActionResult Index(string? date, int mealType = 2, bool hideCodes = true,
-        string[]? wardCode = null, string[]? mealCode = null, string[]? mainDishCode = null)
+        string[]? wardCode = null, string[]? mealCode = null, string[]? mainDishCode = null,
+        string[]? otherComment = null)
     {
         var page = new M_View_MealPlanJsonPage
         {
@@ -41,6 +42,7 @@ public class MealPlanController : Controller
             WardCodes = (wardCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
             MealCodes = (mealCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
             MainDishCodes = (mainDishCode ?? Array.Empty<string>()).Where(c => c != "").ToList(),
+            OtherComments = (otherComment ?? Array.Empty<string>()).Where(c => c != "").ToList(),
         };
 
         // DBが落ちていても画面は必ず表示する
@@ -102,11 +104,13 @@ public class MealPlanController : Controller
             page.WardOptions = BuildOptionsFromRows(page.Rows, "病棟コード", "病棟名");
             page.MealOptions = BuildOptionsFromRows(page.Rows, "食種コード", "食種名");
             page.MainDishOptions = BuildOptionsFromRows(page.Rows, "主食コード", "主食名");
+            page.OtherCommentOptions = BuildOtherCommentOptions(page.Rows);
 
             // 別の日付から引き継いだチェック済みコードが当日の一覧に無い場合も、外せるように選択肢へ残す
             AddMissingChecked(page.WardOptions, page.WardCodes);
             AddMissingChecked(page.MealOptions, page.MealCodes);
             AddMissingChecked(page.MainDishOptions, page.MainDishCodes);
+            AddMissingChecked(page.OtherCommentOptions, page.OtherComments);
 
             // フィルタ（disp_json内のコード値と突き合わせ。disp_json未生成の行はフィルタ時は対象外になる）。
             // 同じリスト内の複数チェックは「どれかに一致（OR）」、リスト同士は掛け合わせ（AND）
@@ -115,7 +119,11 @@ public class MealPlanController : Controller
                 page.Rows = page.Rows.Where(r =>
                     (page.WardCodes.Count == 0 || page.WardCodes.Contains(r.Values.GetValueOrDefault("病棟コード") ?? "")) &&
                     (page.MealCodes.Count == 0 || page.MealCodes.Contains(r.Values.GetValueOrDefault("食種コード") ?? "")) &&
-                    (page.MainDishCodes.Count == 0 || page.MainDishCodes.Contains(r.Values.GetValueOrDefault("主食コード") ?? ""))).ToList();
+                    (page.MainDishCodes.Count == 0 || page.MainDishCodes.Contains(r.Values.GetValueOrDefault("主食コード") ?? "")) &&
+                    // その他コメントは「,」区切りの複数値。分解した値のどれかがチェック値に一致すればヒット
+                    (page.OtherComments.Count == 0 ||
+                     (r.Values.GetValueOrDefault("その他コメント内容") ?? "").Split(',')
+                         .Select(v => v.Trim()).Any(v => page.OtherComments.Contains(v)))).ToList();
             }
 
             page.IsConnected = true;
@@ -168,6 +176,23 @@ public class MealPlanController : Controller
                 code = g.Key,
                 name = g.Select(x => x.name).FirstOrDefault(n => n != "") ?? "",
             })
+            .ToList();
+    }
+
+    /// <summary>
+    /// その他コメントの選択肢を一覧の行から作る。
+    /// その他コメント内容は「きざみ,並食」のようなカンマ区切りの複数値なので、分解した個々の値を選択肢にする
+    /// </summary>
+    private static List<M_CodeName> BuildOtherCommentOptions(List<M_View_MealPlanJsonRow> rows)
+    {
+        return rows
+            .Where(r => r.HasJson)
+            .SelectMany(r => (r.Values.GetValueOrDefault("その他コメント内容") ?? "").Split(','))
+            .Select(v => v.Trim())
+            .Where(v => v != "")
+            .Distinct()
+            .OrderBy(v => v)
+            .Select(v => new M_CodeName { code = v, name = v })
             .ToList();
     }
 
